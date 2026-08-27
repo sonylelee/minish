@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>소니드 X 미니쉬 정산 프로그램</title>
+<link rel="manifest" href="manifest.json" />
+<meta name="theme-color" content="#102a4c" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="소니드정산" />
+<link rel="apple-touch-icon" href="icon-180.png" />
+<link rel="icon" href="icon-192.png" />
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<style>
+  :root{
+    --navy:#102a4c; --navy2:#173a63; --blue:#1f5aa8; --blue-2:#2f6fbf; --blue-soft:#e8f0f9;
+    --bg:#eef1f5; --surface:#ffffff; --surface2:#f6f8fb; --line:#d5dbe4; --line2:#c2cad6;
+    --ink:#182231; --muted:#5c6675; --dim:#93a0b2;
+    --gold:#b9922f; --pay:#b5342a; --recv:#12805a;
+    --sans:-apple-system,BlinkMacSystemFont,system-ui,"Apple SD Gothic Neo","Pretendard","Segoe UI",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.5;-webkit-font-smoothing:antialiased;font-size:14px}
+  .tnum{font-variant-numeric:tabular-nums}
+  .wrap{max-width:1240px;margin:0 auto;padding:0 20px}
+  button{font-family:inherit}
+
+  /* top bar */
+  .topbar{background:var(--navy);color:#fff;padding:env(safe-area-inset-top) 0 0}
+  .topbar .row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 0}
+  .logo{display:flex;align-items:center;gap:11px}
+  .logo img{width:34px;height:34px;display:block}
+  .logo .t{font-size:1.02rem;font-weight:700;letter-spacing:-.01em}
+  .logo .t small{display:block;font-size:.66rem;font-weight:500;color:#9fb4d1;letter-spacing:.02em;margin-top:1px}
+  .top-actions{display:flex;gap:7px;flex-wrap:wrap}
+  .btn{font-size:.83rem;font-weight:600;padding:8px 14px;border:1px solid var(--line2);background:var(--surface);color:var(--ink);cursor:pointer;transition:.12s}
+  .btn:hover{border-color:var(--blue);color:var(--blue)}
+  .btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+  .btn.primary:hover{background:var(--blue-2);color:#fff}
+  .btn.sm{padding:6px 10px;font-size:.76rem}
+  .btn.onnavy{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.25);color:#e8eef6}
+  .btn.onnavy:hover{background:rgba(255,255,255,.16);color:#fff}
+  .btn.onnavy.primary{background:var(--gold);border-color:var(--gold);color:#20180a}
+
+  /* tabs */
+  .tabbar{background:var(--navy);border-bottom:3px solid var(--gold)}
+  .tabbar .row{display:flex;gap:2px}
+  .tabbar button{background:none;border:0;color:#9fb4d1;font-size:.9rem;font-weight:600;padding:13px 20px;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-3px}
+  .tabbar button.on{color:#fff;border-bottom-color:#fff}
+  .tabbar button:hover{color:#fff}
+
+  main{padding:64px 0 70px}
+  .bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:0 0 26px}
+  .spacer{flex:1}
+  select,input[type=text],input[type=number],input[type=date]{font-family:inherit;font-size:.88rem;color:var(--ink);background:var(--surface);border:1px solid var(--line2);padding:8px 10px}
+  input:focus,select:focus{outline:2px solid var(--blue);outline-offset:-1px}
+  .mtabs{display:flex;gap:0;border:1px solid var(--line2);background:var(--surface)}
+  .mtabs button{background:var(--surface);border:0;border-right:1px solid var(--line);color:var(--muted);font-size:.84rem;font-weight:600;padding:8px 15px;cursor:pointer}
+  .mtabs button:last-child{border-right:0}
+  .mtabs button.on{background:var(--navy);color:#fff}
+  .search{flex:1;min-width:150px;max-width:320px}
+
+  /* metric strip */
+  .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin-bottom:18px}
+  .metric{background:var(--surface);padding:15px 16px;border-top:3px solid var(--gold)}
+  .metric .k{font-size:.72rem;color:var(--muted);font-weight:600;letter-spacing:.02em}
+  .metric .k .dot{margin-right:6px}
+  .metric .v{font-size:1.42rem;font-weight:800;margin-top:6px;letter-spacing:-.02em}
+  .metric .s{font-size:.71rem;color:var(--dim);margin-top:2px}
+  .metric.accent{border-top:3px solid var(--gold)}
+  .metric.pay .v{color:var(--pay)} .metric.recv .v{color:var(--recv)}
+  .metric.blue .v{color:var(--blue)} .metric.net .v{color:var(--navy)}
+  .tag{font-size:.64rem;font-weight:700;padding:2px 6px;border:1px solid currentColor}
+
+  /* table */
+  .panel{background:var(--surface);border:1px solid var(--line)}
+  .panel-h{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);background:var(--surface2)}
+  .panel-h h2{font-size:.92rem;font-weight:700}
+  .toverflow{overflow-x:auto;max-height:64vh}
+  table{width:100%;border-collapse:collapse;font-size:.84rem;white-space:nowrap}
+  th,td{padding:9px 14px;text-align:left;border-bottom:1px solid var(--line)}
+  thead th{position:sticky;top:0;background:var(--navy);color:#dbe6f3;font-size:.68rem;letter-spacing:.04em;font-weight:600;z-index:1;text-transform:uppercase}
+  th.r,td.r{text-align:right}
+  tbody tr:hover{background:var(--blue-soft)}
+  tfoot td{position:sticky;bottom:0;background:var(--navy);color:#fff;font-weight:700;border-top:0}
+  tr.qsub td{background:var(--surface2);font-weight:700;border-top:1px solid var(--line2)}
+  .pill{font-size:.72rem;font-weight:600;color:var(--navy)}
+  .tag-pkg{font-size:.62rem;font-weight:700;padding:1px 6px;background:var(--recv);color:#fff;margin-left:6px}
+  .rowbtn{background:none;border:0;color:var(--dim);cursor:pointer;padding:3px 6px}
+  .rowbtn:hover{color:var(--blue)}
+  .empty{padding:56px 20px;text-align:center;color:var(--muted)}.empty b{color:var(--ink)}
+  .barcell{position:relative;min-width:120px}
+  .barcell .bg{height:6px;background:var(--line);overflow:hidden}
+  .barcell .fill{height:100%;background:var(--blue)}
+  .note{font-size:.74rem;color:var(--muted);padding:16px 2px 0}
+  .note code{background:var(--surface2);border:1px solid var(--line);padding:1px 5px}
+
+  /* modal */
+  .modal-bg{position:fixed;inset:0;background:rgba(16,26,42,.55);display:none;align-items:flex-start;justify-content:center;z-index:60;padding:24px;overflow-y:auto}
+  .modal-bg.open{display:flex}
+  .modal{background:var(--surface);border:1px solid var(--line2);width:100%;max-width:520px;margin:auto;box-shadow:0 24px 60px -20px rgba(16,26,42,.5)}
+  .modal-h{display:flex;justify-content:space-between;align-items:center;padding:15px 18px;background:var(--navy);color:#fff}
+  .modal-h h3{font-size:1rem;font-weight:700}
+  .modal-h button{background:none;border:0;color:#cdd9e8;font-size:1.2rem;cursor:pointer}
+  .modal-b{padding:18px;display:grid;grid-template-columns:1fr 1fr;gap:13px}
+  .field{display:flex;flex-direction:column;gap:5px}.field.full{grid-column:1/-1}
+  .field label{font-size:.75rem;font-weight:600;color:var(--muted)}
+  .field input,.field select{width:100%}
+  .splitbox{grid-column:1/-1;background:var(--surface2);border:1px solid var(--line);padding:12px;display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center}
+  .splitbox div{display:flex;flex-direction:column;gap:2px}
+  .splitbox .l{font-size:.66rem;color:var(--muted)}
+  .splitbox b{font-size:.92rem}
+  .modal-f{padding:14px 18px;border-top:1px solid var(--line);display:flex;gap:10px;align-items:center}
+  @media(max-width:560px){.modal-b{grid-template-columns:1fr}.splitbox{grid-template-columns:1fr 1fr}}
+  .clock{color:#9fb4d1;font-size:.78rem;font-variant-numeric:tabular-nums;align-self:center;margin-right:6px;white-space:nowrap}
+  .settle-banner{background:linear-gradient(90deg,#3a2f12,#4a3a14);border-bottom:1px solid var(--gold);color:#f5e9c8}
+  .sb-inner{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 20px;flex-wrap:wrap;font-size:.86rem}
+  .sb-inner b{color:var(--gold)}
+  .sb-btns{display:flex;gap:6px;flex-wrap:wrap}
+  .settle-banner .btn{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.3);color:#f5e9c8}
+  .settle-banner .btn:hover{background:rgba(255,255,255,.22);color:#fff}
+</style>
+</head>
+<body>
+<div class="topbar"><div class="wrap row">
+  <div class="logo"><img src="icon-192.png" alt="SND" onerror="this.style.display='none'"><div class="t">소니드 <span style="color:var(--gold)">×</span> 미니쉬 정산 프로그램<small>SONEED 얼굴윤곽 · 압구정점</small></div></div>
+  <div class="top-actions"><span id="clock" class="clock"></span>
+    <button class="btn sm onnavy" id="importBtn">데이터 가져오기</button>
+    <button class="btn sm onnavy" id="excelBtn">엑셀 저장</button>
+    <button class="btn sm onnavy" id="exportBtn">CSV</button>
+    <button class="btn sm onnavy primary" id="addBtn">+ 방문 등록</button>
+  </div>
+</div></div>
+<div class="tabbar"><div class="wrap row">
+  <button data-tab="customer" class="on">고객</button>
+  <button data-tab="month">월별 정산</button>
+  <button data-tab="balance">선수금 잔액</button>
+  <button data-tab="annual">연간 · 분기 요약</button>
+</div></div>
+
+<div id="settleBanner" class="settle-banner" style="display:none"></div>
+<main class="wrap">
+  <!-- CUSTOMER -->
+  <section id="tab-customer">
+    <div class="bar">
+      <input type="text" class="search" id="cSearch" placeholder="고객명 · 연락처 검색">
+      <span class="spacer"></span>
+      <button class="btn sm" id="custImportBtn2">고객 CSV 가져오기</button>
+      <button class="btn sm primary" id="custAddBtn">+ 신규 고객 등록</button>
+    </div>
+    <div class="metrics" id="c-metrics"></div>
+    <div class="panel">
+      <div class="panel-h"><h2>고객 리스트</h2><span style="font-size:.74rem;color:var(--muted)">잔여횟수 · 최근방문 · 잔여금액</span></div>
+      <div class="toverflow"><table>
+        <thead><tr><th>고객명</th><th>연락처</th><th>가입패키지</th><th class="r">총 결제</th><th class="r">가입횟수</th><th class="r">사용</th><th class="r">잔여횟수</th><th>최근방문</th><th class="r">잔여금액</th><th></th></tr></thead>
+        <tbody id="c-body"></tbody><tfoot id="c-foot"></tfoot>
+      </table></div>
+      <div class="empty" id="c-empty">등록된 고객이 없어요. <b>+ 신규 고객 등록</b> 또는 <b>고객 CSV 가져오기</b></div>
+    </div>
+    <p class="note">신규 고객을 여기서 등록 → 방문 등록 시 정산에 반영돼요. 잔여횟수 = 가입횟수 − 사용(방문). 백업은 엑셀 저장.</p>
+  </section>
+
+  <!-- MONTH -->
+  <section id="tab-month" style="display:none">
+    <div class="bar">
+      <div class="mtabs" id="mtabs"></div>
+      <input type="text" class="search" id="fSearch" placeholder="고객 · 프로그램 검색">
+    </div>
+    <div class="metrics" id="m-metrics"></div>
+    <div class="panel">
+      <div class="panel-h"><h2 id="m-title">월별 방문 정산</h2></div>
+      <div class="toverflow"><table>
+        <thead><tr><th>일자</th><th>고객</th><th>프로그램</th><th class="r">1회 단가</th><th class="r">소개업체</th><th class="r">미니쉬 40%</th><th class="r">소니드 60%</th><th></th></tr></thead>
+        <tbody id="m-body"></tbody><tfoot id="m-foot"></tfoot>
+      </table></div>
+      <div class="empty" id="m-empty">이 달 방문 기록이 없어요. <b>+ 방문 등록</b> 또는 <b>데이터 가져오기</b></div>
+    </div>
+    <p class="note">방문 1건 = 1행. 프로그램 선택 시 단가테이블에서 자동 정산. 저장: 이 브라우저(<code>localStorage</code>) · 백업: 내보내기</p>
+  </section>
+
+  <!-- BALANCE -->
+  <section id="tab-balance" style="display:none">
+    <div class="bar">
+      <input type="text" class="search" id="bSearch" placeholder="고객 검색">
+      <span class="spacer"></span>
+      <button class="btn sm" id="custImportBtn">고객(선수금) CSV 가져오기</button>
+    </div>
+    <div class="metrics" id="b-metrics"></div>
+    <div class="panel">
+      <div class="panel-h"><h2>고객별 선수금 잔액</h2><span style="font-size:.74rem;color:var(--muted)">총결제 − 사용(방문 실단가 합) = 잔여</span></div>
+      <div class="toverflow"><table>
+        <thead><tr><th>고객</th><th class="r">총 결제(수금)</th><th class="r">방문</th><th class="r">사용(소진)</th><th class="r">잔여</th><th>사용률</th></tr></thead>
+        <tbody id="b-body"></tbody><tfoot id="b-foot"></tfoot>
+      </table></div>
+      <div class="empty" id="b-empty">고객 선수금 데이터가 없어요. <b>고객(선수금) CSV 가져오기</b>로 <code>고객_선수금.csv</code>를 넣으세요.</div>
+    </div>
+    <p class="note">수금 = 소니드 카드기로 받은 총액(고객 총결제) · 소진 = 방문할 때마다 1회 실단가만큼 차감 · 잔여 = 아직 관리 안 받은 선수금</p>
+  </section>
+
+  <!-- ANNUAL -->
+  <section id="tab-annual" style="display:none">
+    <div class="bar"><span class="spacer"></span><button class="btn sm" id="annualCsvBtn">연간표 CSV 내보내기</button></div>
+    <div class="metrics" id="a-metrics"></div>
+    <div class="panel">
+      <div class="panel-h"><h2>월간 · 분기 · 연간 요약</h2></div>
+      <div class="toverflow"><table>
+        <thead><tr><th>기간</th><th class="r">방문</th><th class="r">1회단가 총액</th><th class="r">월 소진액</th><th class="r">소개업체</th><th class="r">미니쉬 지급</th><th class="r">미니쉬 수령</th><th class="r">순 미니쉬</th><th class="r">소니드 귀속</th></tr></thead>
+        <tbody id="a-body"></tbody><tfoot id="a-foot"></tfoot>
+      </table></div>
+      <div class="empty" id="a-empty">데이터가 없어요.</div>
+    </div>
+  </section>
+</main>
+
+<!-- modal -->
+<div class="modal-bg" id="modal"><div class="modal">
+  <div class="modal-h"><h3 id="modalTitle">방문 등록</h3><button id="closeBtn">✕</button></div>
+  <div class="modal-b">
+    <div class="field"><label>방문 일자</label><input type="date" id="mDate"></div>
+    <div class="field"><label>고객명</label><input type="text" id="mName" placeholder="예: 홍길동(1234)"></div>
+    <div class="field full"><label>프로그램 (단가테이블)</label><select id="mProg"></select></div>
+    <div class="field full"><label>비고</label><input type="text" id="mNote" placeholder="특이사항"></div>
+    <div class="splitbox" id="splitbox"></div>
+  </div>
+  <div class="modal-f">
+    <button class="btn" id="delBtn" style="color:var(--pay);border-color:var(--pay);display:none">삭제</button>
+    <span class="spacer"></span>
+    <button class="btn" id="cancelBtn">취소</button>
+    <button class="btn primary" id="saveBtn">저장</button>
+  </div>
+</div></div>
+<div class="modal-bg" id="cmodal"><div class="modal">
+  <div class="modal-h"><h3 id="cmodalTitle">신규 고객 등록</h3><button id="cCloseBtn">✕</button></div>
+  <div class="modal-b">
+    <div class="field"><label>고객명</label><input type="text" id="cName" placeholder="예: 홍길동(1234)"></div>
+    <div class="field"><label>연락처</label><input type="text" id="cPhone" placeholder="010-0000-0000"></div>
+    <div class="field full"><label>가입 패키지</label><select id="cPkg"></select></div>
+    <div class="field"><label>총 결제금액 (₩)</label><input type="number" id="cPaid" step="10000"></div>
+    <div class="field"><label>가입 횟수</label><input type="number" id="cSess" step="1"></div>
+  </div>
+  <div class="modal-f">
+    <button class="btn" id="cDelBtn" style="color:var(--pay);border-color:var(--pay);display:none">삭제</button>
+    <span class="spacer"></span>
+    <button class="btn" id="cCancelBtn">취소</button>
+    <button class="btn primary" id="cSaveBtn">저장</button>
+  </div>
+</div></div>
+<input type="file" id="fileInput" accept=".csv" style="display:none">
+<input type="file" id="custFileInput" accept=".csv" style="display:none">
+
+<script>
+'use strict';
+const PROGRAMS = [{"name": "페이스리세팅첫관리", "e": 220000.0, "f": 220000.0, "g": 88000.0, "h": 132000.0, "price": 220000.0, "sessions": 1.0}, {"name": "스마트윤곽첫관리", "e": 250000.0, "f": 250000.0, "g": 100000.0, "h": 150000.0, "price": 250000.0, "sessions": 1.0}, {"name": "페이스리세팅첫관리(-소개15%)", "e": 220000.0, "f": 187000.0, "g": 74800.0, "h": 112200.0, "price": 220000.0, "sessions": 1.0}, {"name": "페이스리세팅5(-소개15%)", "e": 178000.0, "f": 151300.0, "g": 60520.0, "h": 90780.0, "price": 890000.0, "sessions": 5.0}, {"name": "페이스리세팅10+1(-소개15%)", "e": 137272.7273, "f": 116681.8182, "g": 46672.72727, "h": 70009.09091, "price": 1510000.0, "sessions": 11.0}, {"name": "페이스리세팅15+2(-소개15%)", "e": 132941.1765, "f": 113000.0, "g": 45200.0, "h": 67800.0, "price": 2260000.0, "sessions": 17.0}, {"name": "페이스리세팅5(정상가)", "e": 204000.0, "f": 204000.0, "g": 81600.0, "h": 122400.0, "price": 1020000.0, "sessions": 5.0}, {"name": "페이스리세팅10(정상가)", "e": 198000.0, "f": 198000.0, "g": 79200.0, "h": 118800.0, "price": 1980000.0, "sessions": 10.0}, {"name": "페이스리세팅15(정상가)", "e": 176000.0, "f": 176000.0, "g": 70400.0, "h": 105600.0, "price": 2640000.0, "sessions": 15.0}, {"name": "페이스리세팅30(정상가)", "e": 156333.3333, "f": 156333.3333, "g": 62533.33333, "h": 93800.0, "price": 4690000.0, "sessions": 30.0}, {"name": "페이스리세팅10+1(정상가)", "e": 180000.0, "f": 180000.0, "g": 72000.0, "h": 108000.0, "price": 1980000.0, "sessions": 11.0}, {"name": "페이스리세팅15+2(정상가)", "e": 155294.1176, "f": 155294.1176, "g": 62117.64706, "h": 93176.47059, "price": 2640000.0, "sessions": 17.0}, {"name": "페이스리세팅30+3(정상가)", "e": 142121.2121, "f": 142121.2121, "g": 56848.48485, "h": 85272.72727, "price": 4690000.0, "sessions": 33.0}, {"name": "스마트윤곽10(정상가)", "e": 228000.0, "f": 228000.0, "g": 91200.0, "h": 136800.0, "price": 2280000.0, "sessions": 10.0}, {"name": "스마트윤곽15(정상가)", "e": 216000.0, "f": 216000.0, "g": 86400.0, "h": 129600.0, "price": 3240000.0, "sessions": 15.0}, {"name": "스마트윤곽30(정상가)", "e": 172000.0, "f": 172000.0, "g": 68800.0, "h": 103200.0, "price": 5160000.0, "sessions": 30.0}, {"name": "스마트윤곽10+1(정상가)", "e": 207272.7273, "f": 207272.7273, "g": 82909.09091, "h": 124363.6364, "price": 2280000.0, "sessions": 11.0}, {"name": "스마트윤곽15+2(정상가)", "e": 190588.2353, "f": 190588.2353, "g": 76235.29412, "h": 114352.9412, "price": 3240000.0, "sessions": 17.0}, {"name": "스마트윤곽30+3(정상가)", "e": 156363.6364, "f": 156363.6364, "g": 62545.45455, "h": 93818.18182, "price": 5160000.0, "sessions": 33.0}, {"name": "원장페이스리세팅첫관리", "e": 300000.0, "f": 300000.0, "g": 120000.0, "h": 180000.0, "price": 300000.0, "sessions": 1.0}, {"name": "원장스마트윤곽첫관리", "e": 330000.0, "f": 330000.0, "g": 132000.0, "h": 198000.0, "price": 330000.0, "sessions": 1.0}, {"name": "원장페이스리세팅15", "e": 270000.0, "f": 270000.0, "g": 108000.0, "h": 162000.0, "price": 4050000.0, "sessions": 15.0}, {"name": "원장페이스리세팅30", "e": 243000.0, "f": 243000.0, "g": 97200.0, "h": 145800.0, "price": 7290000.0, "sessions": 30.0}, {"name": "원장스마트윤곽15", "e": 288000.0, "f": 288000.0, "g": 115200.0, "h": 172800.0, "price": 4320000.0, "sessions": 15.0}, {"name": "원장스마트윤곽30", "e": 259200.0, "f": 259200.0, "g": 103680.0, "h": 155520.0, "price": 7776000.0, "sessions": 30.0}, {"name": "페이스리세팅5(-소개10%)", "e": 204000.0, "f": 183600.0, "g": 73440.0, "h": 110160.0, "price": 1020000.0, "sessions": 5.0}, {"name": "페이스리세팅10+1(-소개10%)", "e": 180000.0, "f": 162000.0, "g": 64800.0, "h": 97200.0, "price": 1980000.0, "sessions": 11.0}, {"name": "페이스리세팅15+2(-소개10%)", "e": 155294.1176, "f": 139764.7059, "g": 55905.88235, "h": 83858.82353, "price": 2640000.0, "sessions": 17.0}, {"name": "페이스리세팅30+3(-소개10%)", "e": 142121.2121, "f": 127909.0909, "g": 51163.63636, "h": 76745.45455, "price": 4690000.0, "sessions": 33.0}, {"name": "스마트윤곽10+1(-소개10%)", "e": 207272.7273, "f": 186545.4545, "g": 74618.18182, "h": 111927.2727, "price": 2280000.0, "sessions": 11.0}, {"name": "스마트윤곽15+2(-소개10%)", "e": 190588.2353, "f": 171529.4118, "g": 68611.76471, "h": 102917.6471, "price": 3240000.0, "sessions": 17.0}, {"name": "스마트윤곽30+3(-소개10%)", "e": 156363.6364, "f": 140727.2727, "g": 56290.90909, "h": 84436.36364, "price": 5160000.0, "sessions": 33.0}, {"name": "원장페이스리세팅첫관리(-소개10%)", "e": 300000.0, "f": 270000.0, "g": 108000.0, "h": 162000.0, "price": 300000.0, "sessions": 1.0}, {"name": "원장스마트윤곽첫관리(-소개10%)", "e": 330000.0, "f": 297000.0, "g": 118800.0, "h": 178200.0, "price": 330000.0, "sessions": 1.0}, {"name": "원장페이스리세팅15(-소개10%)", "e": 270000.0, "f": 243000.0, "g": 97200.0, "h": 145800.0, "price": 4050000.0, "sessions": 15.0}, {"name": "원장페이스리세팅30(-소개10%)", "e": 243000.0, "f": 218700.0, "g": 87480.0, "h": 131220.0, "price": 7290000.0, "sessions": 30.0}, {"name": "원장스마트윤곽15(-소개10%)", "e": 288000.0, "f": 259200.0, "g": 103680.0, "h": 155520.0, "price": 4320000.0, "sessions": 15.0}, {"name": "원장스마트윤곽30(-소개10%)", "e": 259200.0, "f": 233280.0, "g": 93312.0, "h": 139968.0, "price": 7776000.0, "sessions": 30.0}, {"name": "페이스리세팅10+1정상가(-소개15%)", "e": 180000.0, "f": 153000.0, "g": 61200.0, "h": 91800.0, "price": 1980000.0, "sessions": 11.0}, {"name": "기존 고객님이관", "e": 0.0, "f": 0.0, "g": 0.0, "h": 0.0, "price": 0.0, "sessions": 1.0}, {"name": "아직 관리전", "e": 0.0, "f": 0.0, "g": 0.0, "h": 0.0, "price": 0.0, "sessions": 0.0}, {"name": "이월로 인한 잔액조정", "e": 0.0, "f": 0.0, "g": 0.0, "h": 0.0, "price": 0.0, "sessions": 0.0}, {"name": "미니쉬 매월10인무료", "e": 0.0, "f": 0.0, "g": 0.0, "h": 0.0, "price": 0.0, "sessions": 1.0}, {"name": "미니쉬 패키지 (페이스리세팅)", "e": 220000.0, "f": 220000.0, "g": 88000.0, "h": 132000.0, "price": 220000.0, "sessions": 1.0}, {"name": "미니쉬 패키지 (스마트윤곽)", "e": 250000.0, "f": 250000.0, "g": 100000.0, "h": 150000.0, "price": 250000.0, "sessions": 1.0}, {"name": "미니쉬 패키지 (원장페이스리세팅)", "e": 300000.0, "f": 300000.0, "g": 120000.0, "h": 180000.0, "price": 300000.0, "sessions": 1.0}, {"name": "미니쉬 패키지 (원장스마트윤곽)", "e": 330000.0, "f": 330000.0, "g": 132000.0, "h": 198000.0, "price": 330000.0, "sessions": 1.0}];
+const PMAP = Object.fromEntries(PROGRAMS.map(p=>[p.name,p]));
+const KV='sd_visits_v3', KC='sd_customers_v3';
+const won = n => '₩'+Math.round(n||0).toLocaleString('en-US');
+const $ = s => document.querySelector(s);
+const esc = s => (s+'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+const isPkg = p => /미니쉬 패키지/.test(p||'');
+const normName = p => (p||'').replace(/(\D)[0-9]+(\s*\()/,'$1$2').trim();
+
+let visits = J(KV), customers = J(KC);
+let tab='customer', curMonth='', editId=null;
+function J(k){ try{return JSON.parse(localStorage.getItem(k))||[];}catch(e){return[];} }
+function saveV(){ localStorage.setItem(KV,JSON.stringify(visits)); }
+function saveC(){ localStorage.setItem(KC,JSON.stringify(customers)); }
+function uid(a){ return 'x'+(a.reduce((m,x)=>Math.max(m,+x._n||0),0)+1); }
+function split(prog){ const p=PMAP[prog]||{e:0,f:0,g:0,h:0}; return {unit:p.e,intro:p.e-p.f,minish:p.g,soneed:p.h}; }
+function monthOf(v){ return (v.date||'').slice(0,7); }
+function fmtD(d){ if(!d)return'–'; const p=d.split('-'); return p.length===3?`${p[1]}.${p[2]}`:d; }
+
+// ---------- tab switching ----------
+document.querySelectorAll('.tabbar button').forEach(b=>b.onclick=()=>{
+  tab=b.dataset.tab;
+  document.querySelectorAll('.tabbar button').forEach(x=>x.classList.toggle('on',x===b));
+  ['customer','month','balance','annual'].forEach(t=>$('#tab-'+t).style.display=t===tab?'':'none');
+  $('#addBtn').style.display = tab==='month'?'':'none';
+  render();
+});
+
+function render(){ if(tab==='customer')renderCustomers(); else if(tab==='month')renderMonth(); else if(tab==='balance')renderBalance(); else renderAnnual(); }
+
+// ---------- MONTH ----------
+function renderMonth(){
+  const months=[...new Set(visits.map(monthOf).filter(Boolean))].sort().reverse();
+  if(!curMonth||!months.includes(curMonth)) curMonth=months[0]||'';
+  $('#mtabs').innerHTML=(months.length?months:['-']).map(m=>`<button class="${m===curMonth?'on':''}" data-m="${m}">${m==='-'?'기록없음':m.replace('-','.')}</button>`).join('');
+  const fs=$('#fSearch').value.trim().toLowerCase();
+  let rows=visits.filter(v=>monthOf(v)===curMonth);
+  if(fs)rows=rows.filter(v=>((v.name||'')+(v.program||'')+(v.note||'')).toLowerCase().includes(fs));
+  rows.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  const T={unit:0,intro:0,minish:0,soneed:0}, N={minish:0,cnt:0}, P={soneed:0,cnt:0};
+  rows.forEach(v=>{const s=split(v.program);T.unit+=s.unit;T.intro+=s.intro;T.minish+=s.minish;T.soneed+=s.soneed;
+    if(isPkg(v.program)){P.soneed+=s.soneed;P.cnt++;}else{N.minish+=s.minish;N.cnt++;}});
+  const net=N.minish-P.soneed;
+  $('#m-title').textContent=(curMonth?curMonth.replace('-','.'):'')+' 방문 정산';
+  $('#m-metrics').innerHTML=`
+    <div class="metric pay accent"><div class="k">미니쉬에 지급 · 일반매출</div><div class="v tnum">${won(N.minish)}</div><div class="s">내 카드결제분 · 미니쉬40% (${N.cnt}건)</div></div>
+    <div class="metric recv accent"><div class="k">미니쉬에서 수령 · 미니쉬패키지</div><div class="v tnum">${won(P.soneed)}</div><div class="s">적립금 차감분 · 소니드60% (${P.cnt}건)</div></div>
+    <div class="metric net"><div class="k">순 미니쉬 정산</div><div class="v tnum">${won(net)}</div><div class="s">${net>=0?'미니쉬에 낼 순액':'미니쉬에서 받을 순액'}</div></div>
+    <div class="metric blue"><div class="k">소니드 귀속 (전체)</div><div class="v tnum">${won(T.soneed)}</div><div class="s">60% 합 · 방문 ${rows.length}건</div></div>`;
+  $('#m-body').innerHTML=rows.map(v=>{const s=split(v.program);return `<tr>
+    <td>${fmtD(v.date)}</td><td><b>${esc(v.name||'–')}</b>${v.note?`<div style="font-size:.7rem;color:var(--muted)">${esc(v.note)}</div>`:''}</td>
+    <td><span class="pill">${esc(v.program||'–')}</span>${isPkg(v.program)?'<span class="tag-pkg">적립금·미니쉬지급</span>':''}</td>
+    <td class="r tnum">${won(s.unit)}</td><td class="r tnum" style="color:var(--gold)">${won(s.intro)}</td>
+    <td class="r tnum" style="color:var(--pay)"><b>${won(s.minish)}</b></td><td class="r tnum" style="color:var(--recv)">${won(s.soneed)}</td>
+    <td><button class="rowbtn" data-edit="${v._n}">✎</button></td></tr>`;}).join('');
+  $('#m-foot').innerHTML=rows.length?`<tr><td colspan="3">${curMonth.replace('-','.')} 합계 · ${rows.length}건</td>
+    <td class="r tnum">${won(T.unit)}</td><td class="r tnum">${won(T.intro)}</td><td class="r tnum">${won(T.minish)}</td><td class="r tnum">${won(T.soneed)}</td><td></td></tr>`:'';
+  $('#m-empty').style.display=rows.length?'none':'block';
+}
+
+// ---------- BALANCE (선수금) ----------
+function usedByCustomer(){
+  const u={};
+  visits.forEach(v=>{ if(isPkg(v.program))return; const s=split(v.program); u[v.name]=(u[v.name]||0)+s.unit; });
+  return u;
+}
+function renderBalance(){
+  const used=usedByCustomer();
+  const fs=$('#bSearch').value.trim().toLowerCase();
+  let list=customers.map(c=>{const paid=+c.paid||0;const use=used[c.name]||0;return {name:c.name,paid,use,rem:paid-use,refund:!PMAP[c.package]};});
+  // 방문만 있고 고객목록에 없는 사람도 표시(수금 0)
+  Object.keys(used).forEach(nm=>{ if(!customers.find(c=>c.name===nm)) list.push({name:nm,paid:0,use:used[nm],rem:-used[nm],refund:false}); });
+  if(fs)list=list.filter(x=>x.name.toLowerCase().includes(fs));
+  list.sort((a,b)=>b.rem-a.rem);
+  const TP=list.reduce((s,x)=>s+x.paid,0), TU=list.reduce((s,x)=>s+x.use,0), TR=TP-TU;
+  $('#b-metrics').innerHTML=`
+    <div class="metric blue accent"><div class="k">총 수금 (소니드 카드기 매출)</div><div class="v tnum">${won(TP)}</div><div class="s">고객 ${list.filter(x=>x.paid>0).length}명</div></div>
+    <div class="metric pay"><div class="k">사용 (소진)</div><div class="v tnum">${won(TU)}</div><div class="s">관리 완료분</div></div>
+    <div class="metric recv accent"><div class="k">잔여 (미사용 선수금)</div><div class="v tnum">${won(TR)}</div><div class="s">아직 관리 안 받은 금액</div></div>
+    <div class="metric net"><div class="k">전체 사용률</div><div class="v tnum">${TP?Math.round(TU/TP*100):0}%</div><div class="s">소진 / 수금</div></div>`;
+  const visM=new Map(); visits.forEach(v=>{visM.set(v.name,(visM.get(v.name)||0)+1);});
+  $('#b-body').innerHTML=list.map(x=>{const pct=x.paid?Math.min(100,Math.round(x.use/x.paid*100)):100;return `<tr>
+    <td><b>${esc(x.name)}</b></td><td class="r tnum">${won(x.paid)}</td><td class="r tnum">${visM.get(x.name)||0}</td>
+    <td class="r tnum" style="color:var(--pay)">${won(x.use)}</td>
+    <td class="r tnum" style="color:${x.rem>=0?'var(--recv)':'var(--pay)'}"><b>${won(x.rem)}</b></td>
+    ${x.refund?'<td style="font-size:.72rem;color:var(--muted)">예약환불 위약금</td>':`<td class="barcell"><div class="bg"><div class="fill" style="width:${pct}%;background:${pct>=100?'var(--recv)':'var(--blue)'}"></div></div><span style="font-size:.7rem;color:var(--muted)">${pct}%</span></td>`}</tr>`;}).join('');
+  $('#b-foot').innerHTML=list.length?`<tr><td>합계 · ${list.length}명</td><td class="r tnum">${won(TP)}</td><td></td><td class="r tnum">${won(TU)}</td><td class="r tnum">${won(TR)}</td><td></td></tr>`:'';
+  $('#b-empty').style.display=list.length?'none':'block';
+}
+
+// ---------- ANNUAL ----------
+function renderAnnual(){
+  const months=[...new Set(visits.map(monthOf).filter(Boolean))].sort();
+  const B={}; months.forEach(m=>B[m]={cnt:0,unit:0,intro:0,pay:0,recv:0,soneed:0,used:0});
+  visits.forEach(v=>{const m=monthOf(v);if(!B[m])return;const s=split(v.program);B[m].cnt++;B[m].unit+=s.unit;B[m].soneed+=s.soneed;
+    if(isPkg(v.program))B[m].recv+=s.soneed;else{B[m].intro+=s.intro;B[m].pay+=s.minish;B[m].used+=s.unit;}});
+  const rowF=(lbl,b,cls)=>`<tr${cls?` class="${cls}"`:''}><td>${lbl}</td><td class="r tnum">${b.cnt}</td><td class="r tnum">${won(b.unit)}</td><td class="r tnum" style="color:var(--pay)">${won(b.used||0)}</td>
+    <td class="r tnum" style="color:var(--gold)">${won(b.intro)}</td><td class="r tnum" style="color:var(--pay)">${won(b.pay)}</td>
+    <td class="r tnum" style="color:var(--recv)">${won(b.recv)}</td><td class="r tnum">${won(b.pay-b.recv)}</td>
+    <td class="r tnum">${won(b.soneed)}</td></tr>`;
+  const add=(a,b)=>{['cnt','unit','intro','pay','recv','soneed','used'].forEach(k=>a[k]+=b[k]);};
+  const years=[...new Set(months.map(m=>m.slice(0,4)))];
+  let html=''; const G={cnt:0,unit:0,intro:0,pay:0,recv:0,soneed:0,used:0};
+  years.forEach(y=>{ for(let q=1;q<=4;q++){
+    const qm=months.filter(m=>m.slice(0,4)===y&&Math.ceil(+m.slice(5,7)/3)===q);
+    if(!qm.length)continue; const Q={cnt:0,unit:0,intro:0,pay:0,recv:0,soneed:0,used:0};
+    qm.forEach(m=>{html+=rowF(m.replace('-','.'),B[m]);add(Q,B[m]);});
+    html+=rowF(`${y} ${q}분기 합계`,Q,'qsub'); add(G,Q);
+  }});
+  $('#a-body').innerHTML=html;
+  $('#a-foot').innerHTML=months.length?rowF('전체 합계',G).replace('<tr>','<tr style="font-size:.9rem">'):'';
+  const netG=G.pay-G.recv;
+  $('#a-metrics').innerHTML=`
+    <div class="metric blue accent"><div class="k">누적 소니드 귀속</div><div class="v tnum">${won(G.soneed)}</div><div class="s">${months.length}개월</div></div>
+    <div class="metric pay"><div class="k">누적 미니쉬 지급액<br>(매월 10일 이전 달 분 업데이트)</div><div class="v tnum">${won(G.pay)}</div><div class="s">일반매출 40%</div></div>
+    <div class="metric recv"><div class="k">누적 미니쉬 수령</div><div class="v tnum">${won(G.recv)}</div><div class="s">미니쉬패키지 60%</div></div>
+    <div class="metric net accent"><div class="k">누적 순 미니쉬 (미니쉬에 낼 순액)</div><div class="v tnum">${won(netG)}</div><div class="s">${netG>=0?'미니쉬에 낼 순액':'미니쉬에서 받을 순액'}</div></div>`;
+  $('#a-empty').style.display=months.length?'none':'block';
+}
+
+// ---------- modal ----------
+function openModal(v){
+  editId=v?v._n:null; $('#modalTitle').textContent=v?'방문 수정':'방문 등록'; $('#delBtn').style.display=v?'inline-block':'none';
+  $('#mDate').value=v?.date||(curMonth?curMonth+'-01':''); $('#mName').value=v?.name||''; $('#mProg').value=v?.program||PROGRAMS[3].name; $('#mNote').value=v?.note||'';
+  upSplit(); $('#modal').classList.add('open');
+}
+function upSplit(){const s=split($('#mProg').value);$('#splitbox').innerHTML=`
+  <div><span class="l">1회 실단가</span><b class="tnum">${won(s.unit)}</b></div>
+  <div><span class="l">소개업체</span><b class="tnum" style="color:var(--gold)">${won(s.intro)}</b></div>
+  <div><span class="l">미니쉬 40%</span><b class="tnum" style="color:var(--pay)">${won(s.minish)}</b></div>
+  <div><span class="l">소니드 60%</span><b class="tnum" style="color:var(--recv)">${won(s.soneed)}</b></div>`;}
+$('#addBtn').onclick=()=>openModal(null);
+$('#closeBtn').onclick=$('#cancelBtn').onclick=()=>$('#modal').classList.remove('open');
+$('#modal').onclick=e=>{if(e.target===$('#modal'))$('#modal').classList.remove('open');};
+$('#mProg').onchange=upSplit;
+$('#saveBtn').onclick=()=>{const f={date:$('#mDate').value,name:normName($('#mName').value.trim()),program:$('#mProg').value,note:$('#mNote').value.trim()};
+  if(!f.date||!f.name){alert('일자와 고객명을 입력하세요');return;}
+  if(editId)Object.assign(visits.find(x=>x._n===editId),f);else{f._n=uid(visits);visits.push(f);}
+  saveV();curMonth=monthOf(f);$('#modal').classList.remove('open');render();};
+$('#delBtn').onclick=()=>{if(confirm('삭제할까요?')){visits=visits.filter(x=>x._n!==editId);saveV();$('#modal').classList.remove('open');render();}};
+document.addEventListener('click',e=>{const id=e.target.dataset?.edit;if(id)openModal(visits.find(x=>x._n===id));
+  const m=e.target.dataset?.m;if(m&&m!=='-'){curMonth=m;renderMonth();}});
+$('#fSearch').oninput=renderMonth; $('#bSearch').oninput=renderBalance;
+
+// ---------- CSV ----------
+function parseCSV(t){const R=[];let r=[],c='',q=false;for(let i=0;i<t.length;i++){const ch=t[i];
+  if(q){if(ch==='"'){if(t[i+1]==='"'){c+='"';i++;}else q=false;}else c+=ch;}
+  else{if(ch==='"')q=true;else if(ch===','){r.push(c);c='';}else if(ch==='\n'){r.push(c);R.push(r);r=[];c='';}else if(ch!=='\r')c+=ch;}}
+  if(c!==''||r.length){r.push(c);R.push(r);}return R;}
+const numify=s=>+((s||'').replace(/[^\d.-]/g,''))||0;
+$('#importBtn').onclick=()=>$('#fileInput').click();
+$('#fileInput').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{try{const R=parseCSV(r.result);R.shift();
+    const incoming=R.filter(c=>c[0]||c[1]).map(c=>({date:c[0],name:normName((c[1]||'').trim()),program:(c[2]||'').trim(),note:c[3]||''}));
+    if(visits.length && confirm('기존 방문 '+visits.length+'건이 있어요.\n\n[확인] 이 파일로 전부 교체 (최신 동기화)\n[취소] 기존에 추가'))  visits=[];
+    incoming.forEach(o=>{o._n=uid(visits);visits.push(o);});
+    saveV();render();alert('방문 '+incoming.length+'건 반영 완료');}catch(err){alert('CSV 형식 확인');}$('#fileInput').value='';};r.readAsText(f);};
+$('#custImportBtn').onclick=()=>$('#custFileInput').click();
+$('#custFileInput').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
+  r.onload=()=>{try{const R=parseCSV(r.result);R.shift();customers=[];R.forEach((c,i)=>{if(!c[0])return;let ph='',pk='',paid,ss;
+      if(c.length>=5){ph=(c[1]||'').trim();pk=(c[2]||'').trim();paid=numify(c[3]);ss=numify(c[4]);}else{paid=numify(c[1]);ss=numify(c[2]);}
+      {const nm=normName(c[0].trim());const ex=customers.find(z=>z.name===nm);if(ex){ex.paid=(+ex.paid||0)+paid;ex.sessions=(+ex.sessions||0)+ss;if(!ex.phone&&ph)ex.phone=ph;if(pk)ex.package=pk;}else customers.push({_n:'c'+(i+1),name:nm,phone:ph,package:pk,paid,sessions:ss});}});
+    saveC();render();alert('고객 '+customers.length+'명 가져오기 완료');}catch(err){alert('CSV 형식 확인');}$('#custFileInput').value='';};r.readAsText(f);};
+$('#exportBtn').onclick=()=>{const q=v=>'"'+((v??'')+'').replace(/"/g,'""')+'"';
+  const head=['일자','고객명','프로그램','비고','1회실단가','소개업체','미니쉬40','소니드60'];
+  const lines=[head.join(',')].concat(visits.map(v=>{const s=split(v.program);return[v.date,v.name,v.program,v.note,s.unit,s.intro,s.minish,s.soneed].map(q).join(',');}));
+  dl('소니드미니쉬_방문정산.csv',lines.join('\n'));};
+$('#annualCsvBtn').onclick=()=>{const months=[...new Set(visits.map(monthOf).filter(Boolean))].sort();
+  const B={};months.forEach(m=>B[m]={cnt:0,unit:0,intro:0,pay:0,recv:0,soneed:0});
+  visits.forEach(v=>{const m=monthOf(v);if(!B[m])return;const s=split(v.program);B[m].cnt++;B[m].unit+=s.unit;B[m].soneed+=s.soneed;if(isPkg(v.program))B[m].recv+=s.soneed;else{B[m].intro+=s.intro;B[m].pay+=s.minish;}});
+  const q=v=>'"'+v+'"';const head=['기간','방문','1회단가총액','소개업체','미니쉬지급','미니쉬수령','순미니쉬','소니드귀속'];
+  const lines=[head.join(',')].concat(months.map(m=>[m,B[m].cnt,B[m].unit,B[m].intro,B[m].pay,B[m].recv,B[m].recv-B[m].pay,B[m].soneed].map(x=>q(x)).join(',')));
+  dl('소니드미니쉬_연간요약.csv',lines.join('\n'));};
+function dl(name,txt){const b=new Blob(['﻿'+txt],{type:'text/csv;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=name;a.click();}
+
+$('#excelBtn').onclick=()=>{
+  if(typeof XLSX==='undefined'){alert('엑셀 모듈을 불러오지 못했어요 — 인터넷 연결을 확인하세요');return;}
+  const wb=XLSX.utils.book_new();
+  const hdr=['일자','고객명','방문 횟수','프로그램','결제금액','1회단가(실단가)','1회단가(소개비제외)','미니쉬 귀속(40%)','소개업체 귀속(15%)','소니드 귀속(60%)','프로모션비'];
+  const months=[...new Set(visits.map(monthOf).filter(Boolean))].sort();
+  months.forEach(m=>{
+    const rows=visits.filter(v=>monthOf(v)===m).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+    const cnt={}; const aoa=[hdr]; const T={pay:0,recv:0,intro:0,soneed:0};
+    rows.forEach(v=>{const p=PMAP[v.program]||{}; const s=split(v.program); cnt[v.name]=(cnt[v.name]||0)+1;
+      aoa.push([v.date,v.name,cnt[v.name],v.program,Math.round(p.price||0),Math.round(p.e||0),Math.round(p.f||0),Math.round(s.minish),Math.round(s.intro),Math.round(s.soneed),Math.round(s.intro)]);
+      if(isPkg(v.program))T.recv+=s.soneed;else{T.pay+=s.minish;T.intro+=s.intro;} T.soneed+=s.soneed;});
+    aoa.push([]);
+    aoa.push(['합계','','','','','','',Math.round(T.pay),Math.round(T.intro),Math.round(T.soneed),'']);
+    aoa.push([]);
+    aoa.push(['미니쉬에 지급(일반매출)',Math.round(T.pay)]);
+    aoa.push(['미니쉬에서 수령(미니쉬패키지)',Math.round(T.recv)]);
+    aoa.push(['순 미니쉬 정산',Math.round(T.pay-T.recv)]);
+    aoa.push(['소니드 귀속(전체)',Math.round(T.soneed)]);
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aoa),(m.replace('-','.')+'월 정산').slice(0,31));
+  });
+  const used=usedByCustomer(); const visM={}; visits.forEach(v=>visM[v.name]=(visM[v.name]||0)+1);
+  const names=[...new Set([...customers.map(c=>c.name),...Object.keys(used)])];
+  const bAoa=[['고객','총 결제(수금)','방문','사용(소진)','잔여','사용률%']];
+  names.forEach(nm=>{const c=customers.find(x=>x.name===nm);const paid=c?+c.paid:0;const use=used[nm]||0;bAoa.push([nm,Math.round(paid),visM[nm]||0,Math.round(use),Math.round(paid-use),paid?Math.round(use/paid*100):'']);});
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(bAoa),'선수금 잔액');
+  const B={}; months.forEach(m=>B[m]={cnt:0,unit:0,intro:0,pay:0,recv:0,soneed:0});
+  visits.forEach(v=>{const m=monthOf(v);if(!B[m])return;const s=split(v.program);B[m].cnt++;B[m].unit+=s.unit;B[m].soneed+=s.soneed;if(isPkg(v.program))B[m].recv+=s.soneed;else{B[m].intro+=s.intro;B[m].pay+=s.minish;}});
+  const aAoa=[['기간','방문','1회단가총액','소개업체','미니쉬지급','미니쉬수령','순미니쉬','소니드귀속']];
+  months.forEach(m=>{const b=B[m];aAoa.push([m,b.cnt,Math.round(b.unit),Math.round(b.intro),Math.round(b.pay),Math.round(b.recv),Math.round(b.pay-b.recv),Math.round(b.soneed)]);});
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aAoa),'연간 요약');
+  XLSX.writeFile(wb,'소니드미니쉬_정산.xlsx');
+};
+
+// ---------- CUSTOMERS ----------
+function custStats(){const m={};visits.forEach(v=>{const s=split(v.program);const o=m[v.name]||(m[v.name]={cnt:0,last:'',usedAmt:0,usedSess:0});o.cnt++;if((v.date||'')>o.last)o.last=v.date||'';if(!isPkg(v.program)){o.usedAmt+=s.unit;o.usedSess++;}});return m;}
+function renderCustomers(){
+  const st=custStats(); const fs=$('#cSearch').value.trim().toLowerCase();
+  const names=[...new Set([...customers.map(c=>c.name),...Object.keys(st)])];
+  let list=names.map(nm=>{const c=customers.find(x=>x.name===nm)||{};const paid=+c.paid||0;const sess=+c.sessions||Math.round((PMAP[c.package]||{}).sessions||0);const o=st[nm]||{cnt:0,last:'',usedAmt:0,usedSess:0};
+    return {name:nm,phone:c.phone||'',package:c.package||'',paid,sess,used:o.usedSess,last:o.last,usedAmt:o.usedAmt,remSess:sess-o.usedSess,remAmt:paid-o.usedAmt,_n:c._n};});
+  if(fs)list=list.filter(x=>(x.name+x.phone+x.package).toLowerCase().includes(fs));
+  list.sort((a,b)=>(b.last||'').localeCompare(a.last||''));
+  const TP=list.reduce((s,x)=>s+x.paid,0),TR=list.reduce((s,x)=>s+x.remAmt,0),TRS=list.reduce((s,x)=>s+Math.max(0,x.remSess),0);
+  $('#c-metrics').innerHTML=`
+    <div class="metric blue"><div class="k">총 고객</div><div class="v tnum">${list.length}명</div><div class="s">등록 고객</div></div>
+    <div class="metric"><div class="k">총 수금 (소니드 카드기 매출)</div><div class="v tnum">${won(TP)}</div><div class="s"></div></div>
+    <div class="metric recv"><div class="k">총 잔여금액</div><div class="v tnum">${won(TR)}</div><div class="s">미사용 선수금</div></div>
+    <div class="metric net"><div class="k">총 잔여횟수</div><div class="v tnum">${TRS}회</div><div class="s"></div></div>`;
+  $('#c-body').innerHTML=list.map(x=>`<tr>
+    <td><b>${esc(x.name)}</b></td><td>${esc(x.phone||'–')}</td><td><span class="pill">${PMAP[x.package]?esc(x.package):'예약환불 위약금'}</span></td>
+    <td class="r tnum">${won(x.paid)}</td><td class="r tnum">${x.sess||0}</td><td class="r tnum">${x.used}</td>
+    <td class="r tnum"><b style="color:${x.remSess<=0?'var(--pay)':'var(--recv)'}">${x.remSess}회</b></td>
+    <td>${x.last?x.last.slice(5).replace('-','.'):'–'}</td>
+    <td class="r tnum" style="color:${x.remAmt<0?'var(--pay)':'var(--ink)'}">${won(x.remAmt)}</td>
+    <td>${x._n?`<button class="rowbtn" data-cedit="${x._n}">✎</button>`:''}</td></tr>`).join('');
+  $('#c-foot').innerHTML=list.length?`<tr><td colspan="3">합계 · ${list.length}명</td><td class="r tnum">${won(TP)}</td><td colspan="4"></td><td class="r tnum">${won(TR)}</td><td></td></tr>`:'';
+  $('#c-empty').style.display=list.length?'none':'block';
+}
+let cEditId=null;
+function openCust(c){cEditId=c?c._n:null;$('#cmodalTitle').textContent=c?'고객 수정':'신규 고객 등록';$('#cDelBtn').style.display=c?'inline-block':'none';
+  $('#cName').value=c?.name||'';$('#cPhone').value=c?.phone||'';$('#cPkg').value=c?.package||PROGRAMS[3].name;$('#cPaid').value=c?.paid??'';$('#cSess').value=c?.sessions??'';
+  if(!c)cPkgFill();$('#cmodal').classList.add('open');}
+function cPkgFill(){const p=PMAP[$('#cPkg').value];if(p){$('#cPaid').value=Math.round(p.price||0);$('#cSess').value=Math.round(p.sessions||0);}}
+$('#custAddBtn').onclick=()=>openCust(null);
+$('#cPkg').onchange=cPkgFill;
+$('#cCloseBtn').onclick=$('#cCancelBtn').onclick=()=>$('#cmodal').classList.remove('open');
+$('#cmodal').onclick=e=>{if(e.target===$('#cmodal'))$('#cmodal').classList.remove('open');};
+$('#cSaveBtn').onclick=()=>{const f={name:normName($('#cName').value.trim()),phone:$('#cPhone').value.trim(),package:$('#cPkg').value,paid:+$('#cPaid').value||0,sessions:+$('#cSess').value||0};
+  if(!f.name){alert('고객명을 입력하세요');return;}
+  if(cEditId)Object.assign(customers.find(x=>x._n===cEditId),f);else{f._n='c'+(customers.reduce((m,x)=>Math.max(m,+((x._n||'c0').slice(1))||0),0)+1);customers.push(f);}
+  saveC();$('#cmodal').classList.remove('open');render();};
+$('#cDelBtn').onclick=()=>{if(confirm('이 고객을 삭제할까요?')){customers=customers.filter(x=>x._n!==cEditId);saveC();$('#cmodal').classList.remove('open');render();}};
+document.addEventListener('click',e=>{const id=e.target.dataset?.cedit;if(id)openCust(customers.find(x=>x._n===id));});
+$('#cSearch').oninput=renderCustomers;
+$('#custImportBtn2').onclick=()=>$('#custFileInput').click();
+$('#cPkg').innerHTML=PROGRAMS.map(p=>`<option>${p.name}</option>`).join('');
+
+// ---------- 시계 + 매월 10일 정산 알림 ----------
+function tick(){const d=new Date();const wk=['일','월','화','수','목','금','토'][d.getDay()];
+  const z=n=>String(n).padStart(2,'0');
+  const el=$('#clock'); if(el) el.textContent=`${d.getFullYear()}.${z(d.getMonth()+1)}.${z(d.getDate())} (${wk}) ${z(d.getHours())}:${z(d.getMinutes())}`;}
+tick(); setInterval(tick,30000);
+(function(){const d=new Date();const z=n=>String(n).padStart(2,'0');
+  const ym=d.getFullYear()+'-'+z(d.getMonth()+1);
+  const pv=new Date(d.getFullYear(),d.getMonth()-1,1);const pym=pv.getFullYear()+'-'+z(pv.getMonth()+1);
+  return; // 정산 알림 배너 비활성화
+  if(localStorage.getItem('sd_settle_dismiss')===ym) return;
+  const b=$('#settleBanner'); if(!b) return;
+  b.innerHTML=`<div class="wrap sb-inner"><span>📅 오늘은 <b>${d.getDate()}일</b> — <b>지난달(${pym.replace('-','.')}) 정산</b> 시점이에요. 정산·엑셀 저장을 진행하세요.</span>
+    <span class="sb-btns"><button class="btn sm" id="sbView">지난달 정산 보기</button><button class="btn sm" id="sbExcel">엑셀 저장</button><button class="btn sm ghost" id="sbClose">이번 달 닫기</button></span></div>`;
+  b.style.display='block';
+  $('#sbView').onclick=()=>{tab='month';document.querySelectorAll('.tabbar button').forEach(x=>x.classList.toggle('on',x.dataset.tab==='month'));
+    ['customer','month','balance','annual'].forEach(t=>$('#tab-'+t).style.display=t==='month'?'':'none');
+    $('#addBtn').style.display='';curMonth=pym;renderMonth();window.scrollTo(0,0);};
+  $('#sbExcel').onclick=()=>$('#excelBtn').click();
+  $('#sbClose').onclick=()=>{localStorage.setItem('sd_settle_dismiss',ym);b.style.display='none';};
+})();
+
+// init
+$('#mProg').innerHTML=PROGRAMS.map(p=>`<option>${p.name}</option>`).join('');
+$('#addBtn').style.display=tab==='month'?'':'none';
+render();
+</script>
+</body>
+</html>
