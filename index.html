@@ -166,6 +166,7 @@
     <button class="btn sm onnavy" id="exportBtn">CSV</button>
     <button class="btn sm onnavy" id="stmtBtn">정산명세서</button>
     <button class="btn sm onnavy" id="noticeBtn">📢 공지</button>
+    <button class="btn sm onnavy" id="excBtn">📌 특이사항</button>
     <button class="btn sm onnavy primary" id="addBtn">+ 방문 등록</button>
     <button class="btn sm onnavy" id="logoutBtn">로그아웃</button>
   </div>
@@ -284,6 +285,10 @@
     <button class="btn primary" id="cSaveBtn">저장</button>
   </div>
 </div></div>
+<div class="modal-bg" id="excModal"><div class="modal" style="max-width:560px">
+  <div class="modal-h"><h3>📌 번외·특이사항</h3><button id="excClose">✕</button></div>
+  <div class="modal-b" style="display:block" id="excBody"></div>
+</div></div>
 <div class="modal-bg" id="noticeModal"><div class="modal" style="max-width:520px">
   <div class="modal-h"><h3>📢 공지사항</h3><button id="noticeClose">✕</button></div>
   <div class="modal-b" style="display:block;line-height:1.7;font-size:.92rem">
@@ -365,11 +370,18 @@ function saveC(){ localStorage.setItem(KC,JSON.stringify(customers)); }
 function uid(a){ return 'x'+(a.reduce((m,x)=>Math.max(m,+x._n||0),0)+1); }
 function split(prog){ const p=PMAP[prog]||{e:0,f:0,g:0,h:0}; return {unit:p.e,intro:p.e-p.f,minish:p.g,soneed:p.h}; }
 // 무료처리(리스트엔 남기되 금액 0): 이름+날짜로 지정. 시트 재동기화에도 유지됨
-const FREE_VISITS=[{n:'박슬비(7289)',d:'2026-05-11'},{n:'고여운(1684)',d:'2026-06-17'}];
-const isFreeV = v => FREE_VISITS.some(x=>x.n===v.name && x.d===v.date);
+// 번외/기타 특이사항 (매 동기화에도 유지). type: 무료처리(해당 방문 0원) · 횟수조정(잔여 delta)
+const EXCEPTIONS=[
+  {name:'박슬비(7289)',date:'2026-05-11',month:'2026-05',type:'무료처리',reason:'추가 서비스 1회 (5회권 초과분)'},
+  {name:'고여운(1684)',date:'2026-06-17',month:'2026-06',type:'무료처리',reason:'추가 서비스 1회 (5회권 초과분)'},
+  {name:'최승미(7158)',date:'2026-07-30',month:'2026-07',type:'횟수조정',delta:-1,reason:'초기 동탄점에서 상담 진행으로 1회 동탄점 진행. 따라서 잔여횟수 차이가 있음'},
+];
+const isFreeV = v => EXCEPTIONS.some(e=>e.type==='무료처리' && e.name===v.name && e.date===v.date);
+const sessAdj = nm => EXCEPTIONS.filter(e=>e.type==='횟수조정'&&e.name===nm).reduce((s,e)=>s+(e.delta||0),0);
+const exVisit = v => EXCEPTIONS.find(e=>e.type==='무료처리' && e.name===v.name && e.date===v.date);
 const eff = v => isFreeV(v) ? {unit:0,intro:0,minish:0,soneed:0} : split(v.program);
 // 선생님 급여: 페이스리세팅 관리 6만 / 스마트윤곽 7만 (관리 1회당)
-const payOf = p => { p=p||''; if(/원장/.test(p)) return 0; return /스마트윤곽/.test(p) ? 70000 : /페이스리세팅/.test(p) ? 60000 : 0; };
+const payOf = p => { p=p||''; if(/원장/.test(p)) return 0; if(/스마트윤곽/.test(p)) return 70000; if(/페이스리세팅/.test(p)) return 60000; if(/무료/.test(p)) return 60000; return 0; };
 // 카드수수료: 소개-15%건=네이버페이 2.585% / 그 외=토스 매장카드 1% (카드결제분에만)
 const feeRate = p => /-소개15%/.test(p||'') ? 0.02585 : 0.01;
 function monthOf(v){ return (v.date||'').slice(0,7); }
@@ -396,11 +408,12 @@ function renderMonth(){
   if(fs)rows=rows.filter(v=>((v.name||'')+(v.program||'')+(v.note||'')).toLowerCase().includes(fs));
   rows.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
   const T={unit:0,intro:0,minish:0,soneed:0}, N={unit:0,minish:0,soneed:0,cnt:0}, P={unit:0,minish:0,soneed:0,cnt:0};
-  let payFace=0, paySmart=0, wonjang=0, feeS=0, feeM=0;
+  let payFace=0, paySmart=0, wonjang=0, feeS=0, feeM=0, freeCnt=0; const freeNames=new Set();
   rows.forEach(v=>{const s=eff(v);T.unit+=s.unit;T.intro+=s.intro;T.minish+=s.minish;T.soneed+=s.soneed;
     if(isPkg(v.program)){P.unit+=s.unit;P.minish+=s.minish;P.soneed+=s.soneed;P.cnt++;}else{N.unit+=s.unit;N.minish+=s.minish;N.soneed+=s.soneed;N.cnt++;
       const fr=feeRate(v.program); feeS+=s.soneed*fr; feeM+=s.minish*fr;}
     const po=payOf(v.program); if(po===70000)paySmart++; else if(po===60000)payFace++;
+    if(/무료/.test(v.program||'')){freeCnt++; freeNames.add(v.name);}
     if(/원장/.test(v.program||'')) wonjang+=s.soneed;});
   const net=N.minish-P.soneed;
   feeS=Math.round(feeS); feeM=Math.round(feeM); const vat=Math.round(T.soneed/11);
@@ -408,7 +421,7 @@ function renderMonth(){
   const soneedNet=T.soneed-pay-wonjang-feeS-vat;
   const minishNet=T.minish-feeM;
   const mnum=curMonth?+curMonth.slice(5,7):0; const ml=mnum?mnum+'월':''; const nx=mnum?(mnum%12)+1:0;
-  $('#m-title').textContent=(curMonth?curMonth.replace('-','.'):'')+' 방문 정산';
+  $('#m-title').innerHTML=(curMonth?curMonth.replace('-','.'):'')+' 방문 정산'+(freeCnt?` <span style="font-size:.7rem;color:var(--gold);font-weight:600;margin-left:8px;vertical-align:middle">🎁 미니쉬10인무료 ${freeNames.size}명·${freeCnt}건</span>`:'');
   $('#m-metrics').innerHTML=`
     <div class="metric"><div class="k">${ml} 소니드 사용액 <span style="opacity:.7;display:block;font-size:.82em">(카드결제)</span></div><div class="v tnum">${won(N.unit)}</div><div class="s">미니쉬40% ${won(N.minish)} · 소니드60% ${won(N.soneed)} · 소개 ${won(T.intro)} · ${N.cnt}건</div></div>
     <div class="metric"><div class="k">${ml} 패키지 사용액 <span style="opacity:.7;display:block;font-size:.82em">(미니쉬 적립금)</span></div><div class="v tnum">${won(P.unit)}</div><div class="s">미니쉬40% ${won(P.minish)} · 소니드60% ${won(P.soneed)} · ${P.cnt}건</div></div>
@@ -417,10 +430,10 @@ function renderMonth(){
     <div class="metric recv accent"><div class="k">🧡 ${ml} 미니쉬 수익 <span style="opacity:.7;display:block;font-size:.82em">(카드+패키지 40%)</span></div><div class="v tnum">${won(minishNet)}</div><div class="s">카드40% ${won(N.minish)} + 패키지40% ${won(P.minish)} <span style="opacity:.6">− 카드수수료 ${won(feeM)}</span></div></div>
     <div class="metric net"><div class="k">💸 ${ml} 소니드 → 미니쉬 <span style="opacity:.7;display:block;font-size:.82em">(임차료 지급)</span></div><div class="v tnum">${won(N.minish)}</div><div class="s">카드결제 미니쉬 40% · ${nx}월 10일 이체</div></div>
     <div class="metric recv"><div class="k">💵 ${ml} 미니쉬 → 소니드 <span style="opacity:.7;display:block;font-size:.82em">(패키지 수령액)</span></div><div class="v tnum">${won(P.soneed)}</div><div class="s">패키지 소니드 60% · ${nx}월 10일 이체</div></div>
-    <div class="metric net accent"><div class="k">💰 ${ml} 순 차액 <span style="opacity:.7;display:block;font-size:.82em">(두 이체 합산)</span></div><div class="v tnum">${net>=0?'소니드 → 미니쉬':'미니쉬 → 소니드'} ${won(Math.abs(net))}</div><div class="s">소니드→미니쉬 ${won(N.minish)} − 미니쉬→소니드 ${won(P.soneed)}</div></div>`;
+    <div style="grid-column:1/-1;text-align:center;font-size:.82rem;padding:6px 8px;border-top:1px dashed var(--line);color:var(--muted)">💰 <b>순 차액</b> — ${net>=0?'소니드 → 미니쉬':'미니쉬 → 소니드'} <b style="color:${net>=0?'var(--pay)':'var(--recv)'}">${won(Math.abs(net))}</b> <span style="opacity:.7">(소니드→미니쉬 ${won(N.minish)} − 미니쉬→소니드 ${won(P.soneed)})</span></div>`;
   $('#m-body').innerHTML=rows.map(v=>{const s=eff(v);return `<tr>
     <td>${fmtD(v.date)}</td><td><b>${esc(v.name||'–')}</b>${v.note?`<div style="font-size:.7rem;color:var(--muted)">${esc(v.note)}</div>`:''}</td>
-    <td><span class="pill">${esc(v.program||'–')}</span>${isPkg(v.program)?'<span class="tag-pkg">적립금·미니쉬지급</span>':''}${isFreeV(v)?'<span class="tag-pkg" style="background:var(--gold);color:#1a1a1a">무료처리</span>':''}</td>
+    <td><span class="pill">${esc(v.program||'–')}</span>${isPkg(v.program)?'<span class="tag-pkg">적립금·미니쉬지급</span>':''}${exVisit(v)?`<span class="tag-pkg" style="background:var(--gold);color:#1a1a1a" title="${esc(exVisit(v).reason)}">📌 ${esc(exVisit(v).type)}</span>`:''}</td>
     <td class="r tnum">${won(s.unit)}</td><td class="r tnum" style="color:var(--gold)">${won(s.intro)}</td>
     <td class="r tnum" style="color:var(--pay)"><b>${won(s.minish)}</b></td><td class="r tnum" style="color:var(--recv)">${won(s.soneed)}</td>
     <td><button class="rowbtn" data-edit="${v._n}">✎</button></td></tr>`;}).join('');
@@ -589,20 +602,20 @@ function custStats(){const m={};visits.forEach(v=>{const s=eff(v);const o=m[v.na
 function renderCustomers(){
   const st=custStats(); const fs=$('#cSearch').value.trim().toLowerCase();
   const names=[...new Set([...customers.map(c=>c.name),...Object.keys(st)])];
-  let list=names.map(nm=>{const c=customers.find(x=>x.name===nm)||{};const paid=+c.paid||0;const sess=(+c.sessions||0)||Math.round((PMAP[c.package]||{}).sessions||0);const o=st[nm]||{cnt:0,last:'',usedAmt:0,usedSess:0};
+  let list=names.map(nm=>{const c=customers.find(x=>x.name===nm)||{};const paid=+c.paid||0;const sess=((+c.sessions||0)||Math.round((PMAP[c.package]||{}).sessions||0))+sessAdj(nm);const o=st[nm]||{cnt:0,last:'',usedAmt:0,usedSess:0};
     return {name:nm,phone:c.phone||'',package:c.package||'',paid,sess,used:o.usedSess,last:o.last,usedAmt:o.usedAmt,remSess:sess-o.usedSess,remAmt:paid-o.usedAmt,_n:c._n};});
   if(fs)list=list.filter(x=>(x.name+x.phone+x.package).toLowerCase().includes(fs));
   list.sort((a,b)=>(b.last||'').localeCompare(a.last||''));
-  const TP=list.reduce((s,x)=>s+x.paid,0),TR=list.reduce((s,x)=>s+x.remAmt,0),TRS=list.reduce((s,x)=>s+Math.max(0,x.remSess),0);
+  const TP=list.reduce((s,x)=>s+x.paid,0),TR=list.reduce((s,x)=>s+x.remAmt,0),TRS=list.reduce((s,x)=>s+(PMAP[x.package]&&!/이관|이월|관리전|조정|무료/.test(x.package)?Math.max(0,x.remSess):0),0);
   $('#c-metrics').innerHTML=`
     <div class="metric blue"><div class="k">총 고객</div><div class="v tnum">${list.length}명</div><div class="s">등록 고객</div></div>
     <div class="metric"><div class="k">총 수금 (소니드 카드기 매출)</div><div class="v tnum">${won(TP)}</div><div class="s"></div></div>
     <div class="metric recv"><div class="k">총 잔여금액</div><div class="v tnum">${won(TR)}</div><div class="s">미사용 선수금</div></div>
     <div class="metric net"><div class="k">총 잔여횟수</div><div class="v tnum">${TRS}회</div><div class="s"></div></div>`;
   $('#c-body').innerHTML=list.map(x=>`<tr>
-    <td><b>${esc(x.name)}</b></td><td>${esc(x.phone||'–')}</td><td><span class="pill">${PMAP[x.package]?esc(x.package):'예약환불 위약금'}</span></td>
+    <td><b>${esc(x.name)}</b>${EXCEPTIONS.filter(e=>e.name===x.name).map(e=>`<div style="font-size:.66rem;color:var(--gold)">📌 ${esc(e.reason)}</div>`).join('')}</td><td>${esc(x.phone||'–')}</td><td><span class="pill">${PMAP[x.package]?esc(x.package):'예약환불 위약금'}</span></td>
     <td class="r tnum">${won(x.paid)}</td><td class="r tnum">${x.sess||0}</td><td class="r tnum">${x.used}</td>
-    <td class="r tnum">${PMAP[x.package]?`<b style="color:${x.remSess<=0?'var(--pay)':'var(--recv)'}">${x.remSess}회</b>`:'<span style="color:var(--muted)">–</span>'}</td>
+    <td class="r tnum">${PMAP[x.package] && !/이관|이월|관리전|조정|무료/.test(x.package)?`<b style="color:${x.remSess<=0?'var(--pay)':'var(--recv)'}">${x.remSess}회</b>`:`<span style="color:var(--muted)">${/이관/.test(x.package)?'이관(동탄)':/무료/.test(x.package)?'무료':/이월|조정/.test(x.package)?'조정':/관리전/.test(x.package)?'대기':'–'}</span>`}</td>
     <td>${x.last?x.last.slice(5).replace('-','.'):'–'}</td>
     <td class="r tnum" style="color:${x.remAmt<0?'var(--pay)':'var(--ink)'}">${won(x.remAmt)}</td>
     <td>${x._n?`<button class="rowbtn" data-cedit="${x._n}">✎</button>`:''}</td></tr>`).join('');
@@ -706,6 +719,23 @@ $('#noticeBtn').onclick=openNotice;
 $('#noticeClose').onclick=$('#noticeOk').onclick=()=>closeNotice(false);
 $('#noticeNever').onclick=()=>closeNotice(true);
 $('#noticeModal').onclick=e=>{if(e.target===$('#noticeModal'))closeNotice(false);};
+
+// ===== 특이사항 팝업 =====
+function openExc(){
+  const bm={}; EXCEPTIONS.forEach(e=>{(bm[e.month]=bm[e.month]||[]).push(e);});
+  const html=Object.keys(bm).sort().reverse().map(m=>`
+    <div style="margin-bottom:12px">
+      <div style="font-weight:700;color:var(--blue);margin-bottom:5px">${m.replace('-','.')}</div>
+      ${bm[m].map(e=>`<div style="padding:8px 10px;background:rgba(240,170,60,.10);border-left:3px solid var(--gold);border-radius:6px;margin-bottom:5px">
+        <b>${esc(e.name)}</b> <span style="font-size:.72rem;color:var(--muted)">· ${esc(e.type)}${e.date?' · '+e.date:''}</span><br>
+        <span style="font-size:.85rem">📌 ${esc(e.reason)}</span></div>`).join('')}
+    </div>`).join('');
+  $('#excBody').innerHTML=html||'<div style="color:var(--muted)">특이사항이 없습니다.</div>';
+  $('#excModal').classList.add('open');
+}
+$('#excBtn').onclick=openExc;
+$('#excClose').onclick=()=>$('#excModal').classList.remove('open');
+$('#excModal').onclick=e=>{if(e.target===$('#excModal'))$('#excModal').classList.remove('open');};
 
 checkAuth();
 </script>
