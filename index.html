@@ -165,6 +165,7 @@
     <button class="btn sm onnavy" id="excelBtn">엑셀 저장</button>
     <button class="btn sm onnavy" id="exportBtn">CSV</button>
     <button class="btn sm onnavy" id="stmtBtn">정산명세서</button>
+    <button class="btn sm onnavy" id="noticeBtn">📢 공지</button>
     <button class="btn sm onnavy primary" id="addBtn">+ 방문 등록</button>
     <button class="btn sm onnavy" id="logoutBtn">로그아웃</button>
   </div>
@@ -283,6 +284,19 @@
     <button class="btn primary" id="cSaveBtn">저장</button>
   </div>
 </div></div>
+<div class="modal-bg" id="noticeModal"><div class="modal" style="max-width:520px">
+  <div class="modal-h"><h3>📢 공지사항</h3><button id="noticeClose">✕</button></div>
+  <div class="modal-b" style="display:block;line-height:1.7;font-size:.92rem">
+    <div style="padding:12px 14px;background:rgba(56,132,255,.08);border-left:3px solid var(--blue);border-radius:8px;margin-bottom:12px">
+      현재 <b>1시간 단위로 구글시트와 자동 연동</b>되고 있으며, 연동 시 구글시트에 <b>삽입·수정을 하지 않도록</b> 설계되어 있습니다. <b style="color:var(--blue)">(읽기 전용)</b>
+    </div>
+    <div style="padding:12px 14px;background:rgba(240,170,60,.10);border-left:3px solid var(--gold);border-radius:8px">
+      <b>고여운·박슬비</b>님의 경우 추가 서비스 회차가 있어, 발견 날짜인 <b>8월 정산에서 마이너스 처리</b>되었습니다.<br>
+      따라서 <b>구글시트·웹의 월단위 정산금액</b>과 <b>실제 이체금액</b>에 차이가 있을 수 있습니다. <b>그 외에는 일치합니다.</b>
+    </div>
+  </div>
+  <div class="modal-f"><button class="btn" id="noticeNever" style="opacity:.7">다시 보지 않기</button><button class="btn primary" id="noticeOk">확인</button></div>
+</div></div>
 <div class="modal-bg" id="stmtModal"><div class="modal" style="max-width:660px">
   <div class="modal-h"><h3>정산명세서 <span id="stmtMonth"></span></h3><button id="stmtClose">✕</button></div>
   <div class="modal-b" style="display:block;padding:0">
@@ -342,6 +356,7 @@ async function loadCloud(){
   customers=(cs||[]).map(r=>({...r,_n:r.id}));
   visits=(vs||[]).map(r=>({...r,_n:r.id}));
   render();
+  if(!window._noticeShown){ window._noticeShown=true; if(localStorage.getItem('sd_notice_v1')!=='1') openNotice(); }
 }
 let tab='customer', curMonth='', editId=null;
 function J(k){ try{return JSON.parse(localStorage.getItem(k))||[];}catch(e){return[];} }
@@ -674,6 +689,14 @@ $('#stmtClose').onclick=()=>$('#stmtModal').classList.remove('open');
 $('#stmtModal').onclick=e=>{if(e.target===$('#stmtModal'))$('#stmtModal').classList.remove('open');};
 document.querySelectorAll('#stmtPaper input').forEach(el=>el.addEventListener('input',recalcStmt));
 $('#stmtPrint').onclick=()=>window.print();
+
+// ===== 공지 팝업 =====
+function openNotice(){ $('#noticeModal').classList.add('open'); }
+function closeNotice(never){ $('#noticeModal').classList.remove('open'); if(never) localStorage.setItem('sd_notice_v1','1'); }
+$('#noticeBtn').onclick=openNotice;
+$('#noticeClose').onclick=$('#noticeOk').onclick=()=>closeNotice(false);
+$('#noticeNever').onclick=()=>closeNotice(true);
+$('#noticeModal').onclick=e=>{if(e.target===$('#noticeModal'))closeNotice(false);};
 
 checkAuth();
 </script>
