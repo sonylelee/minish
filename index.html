@@ -12,6 +12,7 @@
 <link rel="apple-touch-icon" href="icon-180.png" />
 <link rel="icon" href="icon-192.png" />
 <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root{
     --navy:#102a4c; --navy2:#173a63; --blue:#1f5aa8; --blue-2:#2f6fbf; --blue-soft:#e8f0f9;
@@ -120,9 +121,28 @@
   .sb-btns{display:flex;gap:6px;flex-wrap:wrap}
   .settle-banner .btn{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.3);color:#f5e9c8}
   .settle-banner .btn:hover{background:rgba(255,255,255,.22);color:#fff}
+  .login-gate{position:fixed;inset:0;z-index:200;background:linear-gradient(160deg,#0e2646,#173a63);display:flex;align-items:center;justify-content:center;padding:24px}
+  .login-box{background:var(--surface);border:1px solid var(--line2);width:100%;max-width:360px;padding:34px 28px;display:flex;flex-direction:column;gap:11px;text-align:center;box-shadow:0 24px 60px -20px rgba(0,0,0,.5)}
+  .login-box .login-logo img{width:66px;height:66px}
+  .login-box h2{font-size:1.12rem;font-weight:800;color:var(--navy);margin-top:4px}
+  .login-box p{font-size:.82rem;color:var(--muted);margin-bottom:6px}
+  .login-box input{width:100%;padding:11px 12px;font-size:.95rem}
+  .login-box .btn{width:100%;padding:11px;font-size:.95rem;margin-top:4px}
+  .login-err{font-size:.8rem;color:var(--pay);min-height:1.1em}
 </style>
 </head>
 <body>
+<div id="loginGate" class="login-gate">
+  <form id="loginForm" class="login-box">
+    <div class="login-logo"><img src="icon-192.png" alt=""></div>
+    <h2>소니드 × 미니쉬 정산</h2>
+    <p>로그인 후 이용하세요</p>
+    <input type="email" id="liEmail" placeholder="이메일" autocomplete="username" required>
+    <input type="password" id="liPass" placeholder="비밀번호" autocomplete="current-password" required>
+    <button type="submit" class="btn primary" id="liBtn">로그인</button>
+    <div id="liErr" class="login-err"></div>
+  </form>
+</div>
 <div class="topbar"><div class="wrap row">
   <div class="logo"><img src="icon-192.png" alt="SND" onerror="this.style.display='none'"><div class="t">소니드 <span style="color:var(--gold)">×</span> 미니쉬 정산 프로그램<small>SONEED 얼굴윤곽 · 압구정점</small></div></div>
   <div class="top-actions"><span id="clock" class="clock"></span>
@@ -130,6 +150,7 @@
     <button class="btn sm onnavy" id="excelBtn">엑셀 저장</button>
     <button class="btn sm onnavy" id="exportBtn">CSV</button>
     <button class="btn sm onnavy primary" id="addBtn">+ 방문 등록</button>
+    <button class="btn sm onnavy" id="logoutBtn">로그아웃</button>
   </div>
 </div></div>
 <div class="tabbar"><div class="wrap row">
@@ -260,7 +281,16 @@ const esc = s => (s+'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 const isPkg = p => /미니쉬 패키지/.test(p||'');
 const normName = p => (p||'').replace(/(\D)[0-9]+(\s*\()/,'$1$2').trim();
 
-let visits = J(KV), customers = J(KC);
+const SB_URL='https://qvgfnpambbbrgvbowswz.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2Z2ZucGFtYmJicmd2Ym93c3d6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2ODYxMzIsImV4cCI6MjEwMTI2MjEzMn0.QtiQSZjf9mePmu0_3wC_yOyD_DtGD_-PoKPNhwsXLGY';
+const sb = supabase.createClient(SB_URL, SB_KEY);
+let visits=[], customers=[];
+async function loadCloud(){
+  const [{data:cs},{data:vs}]=await Promise.all([sb.from('customers').select('*'),sb.from('visits').select('*')]);
+  customers=(cs||[]).map(r=>({...r,_n:r.id}));
+  visits=(vs||[]).map(r=>({...r,_n:r.id}));
+  render();
+}
 let tab='customer', curMonth='', editId=null;
 function J(k){ try{return JSON.parse(localStorage.getItem(k))||[];}catch(e){return[];} }
 function saveV(){ localStorage.setItem(KV,JSON.stringify(visits)); }
@@ -294,12 +324,13 @@ function renderMonth(){
   rows.forEach(v=>{const s=split(v.program);T.unit+=s.unit;T.intro+=s.intro;T.minish+=s.minish;T.soneed+=s.soneed;
     if(isPkg(v.program)){P.soneed+=s.soneed;P.cnt++;}else{N.minish+=s.minish;N.cnt++;}});
   const net=N.minish-P.soneed;
+  const mnum=curMonth?+curMonth.slice(5,7):0; const ml=mnum?mnum+'월':''; const nx=mnum?(mnum%12)+1:0;
   $('#m-title').textContent=(curMonth?curMonth.replace('-','.'):'')+' 방문 정산';
   $('#m-metrics').innerHTML=`
-    <div class="metric pay accent"><div class="k">미니쉬에 지급 · 일반매출</div><div class="v tnum">${won(N.minish)}</div><div class="s">내 카드결제분 · 미니쉬40% (${N.cnt}건)</div></div>
-    <div class="metric recv accent"><div class="k">미니쉬에서 수령 · 미니쉬패키지</div><div class="v tnum">${won(P.soneed)}</div><div class="s">적립금 차감분 · 소니드60% (${P.cnt}건)</div></div>
-    <div class="metric net"><div class="k">순 미니쉬 정산</div><div class="v tnum">${won(net)}</div><div class="s">${net>=0?'미니쉬에 낼 순액':'미니쉬에서 받을 순액'}</div></div>
-    <div class="metric blue"><div class="k">소니드 귀속 (전체)</div><div class="v tnum">${won(T.soneed)}</div><div class="s">60% 합 · 방문 ${rows.length}건</div></div>`;
+    <div class="metric pay accent"><div class="k">${ml} 미니쉬 지급 · 일반매출</div><div class="v tnum">${won(N.minish)}</div><div class="s">내 카드결제분 · 미니쉬40% (${N.cnt}건)</div></div>
+    <div class="metric recv accent"><div class="k">${ml} 미니쉬 수령 · 미니쉬패키지</div><div class="v tnum">${won(P.soneed)}</div><div class="s">적립금 차감분 · 소니드60% (${P.cnt}건)</div></div>
+    <div class="metric net"><div class="k">${ml} 미니쉬 순정산</div><div class="v tnum">${won(net)}</div><div class="s">지급 − 수령 · ${ml}분 → ${nx}월 10일 정산완료</div></div>
+    <div class="metric blue"><div class="k">${ml} 소니드 귀속</div><div class="v tnum">${won(T.soneed)}</div><div class="s">60% 합 · 방문 ${rows.length}건</div></div>`;
   $('#m-body').innerHTML=rows.map(v=>{const s=split(v.program);return `<tr>
     <td>${fmtD(v.date)}</td><td><b>${esc(v.name||'–')}</b>${v.note?`<div style="font-size:.7rem;color:var(--muted)">${esc(v.note)}</div>`:''}</td>
     <td><span class="pill">${esc(v.program||'–')}</span>${isPkg(v.program)?'<span class="tag-pkg">적립금·미니쉬지급</span>':''}</td>
@@ -367,7 +398,7 @@ function renderAnnual(){
     <div class="metric blue accent"><div class="k">누적 소니드 귀속</div><div class="v tnum">${won(G.soneed)}</div><div class="s">${months.length}개월</div></div>
     <div class="metric pay"><div class="k">누적 미니쉬 지급액<br>(매월 10일 이전 달 분 업데이트)</div><div class="v tnum">${won(G.pay)}</div><div class="s">일반매출 40%</div></div>
     <div class="metric recv"><div class="k">누적 미니쉬 수령</div><div class="v tnum">${won(G.recv)}</div><div class="s">미니쉬패키지 60%</div></div>
-    <div class="metric net accent"><div class="k">누적 순 미니쉬 (미니쉬에 낼 순액)</div><div class="v tnum">${won(netG)}</div><div class="s">${netG>=0?'미니쉬에 낼 순액':'미니쉬에서 받을 순액'}</div></div>`;
+    <div class="metric net accent"><div class="k">누적 순 미니쉬 (지급 − 수령)</div><div class="v tnum">${won(netG)}</div><div class="s">매월 10일 정산완료</div></div>`;
   $('#a-empty').style.display=months.length?'none':'block';
 }
 
@@ -386,11 +417,12 @@ $('#addBtn').onclick=()=>openModal(null);
 $('#closeBtn').onclick=$('#cancelBtn').onclick=()=>$('#modal').classList.remove('open');
 $('#modal').onclick=e=>{if(e.target===$('#modal'))$('#modal').classList.remove('open');};
 $('#mProg').onchange=upSplit;
-$('#saveBtn').onclick=()=>{const f={date:$('#mDate').value,name:normName($('#mName').value.trim()),program:$('#mProg').value,note:$('#mNote').value.trim()};
+$('#saveBtn').onclick=async()=>{const f={date:$('#mDate').value,name:normName($('#mName').value.trim()),program:$('#mProg').value,note:$('#mNote').value.trim()};
   if(!f.date||!f.name){alert('일자와 고객명을 입력하세요');return;}
-  if(editId)Object.assign(visits.find(x=>x._n===editId),f);else{f._n=uid(visits);visits.push(f);}
-  saveV();curMonth=monthOf(f);$('#modal').classList.remove('open');render();};
-$('#delBtn').onclick=()=>{if(confirm('삭제할까요?')){visits=visits.filter(x=>x._n!==editId);saveV();$('#modal').classList.remove('open');render();}};
+  if(editId){await sb.from('visits').update(f).eq('id',editId);Object.assign(visits.find(x=>x._n===editId),f);}
+  else{const {data,error}=await sb.from('visits').insert(f).select().single();if(error){alert('저장 실패: '+error.message);return;}visits.push({...data,_n:data.id});}
+  curMonth=monthOf(f);$('#modal').classList.remove('open');render();};
+$('#delBtn').onclick=async()=>{if(confirm('삭제할까요?')){await sb.from('visits').delete().eq('id',editId);visits=visits.filter(x=>x._n!==editId);$('#modal').classList.remove('open');render();}};
 document.addEventListener('click',e=>{const id=e.target.dataset?.edit;if(id)openModal(visits.find(x=>x._n===id));
   const m=e.target.dataset?.m;if(m&&m!=='-'){curMonth=m;renderMonth();}});
 $('#fSearch').oninput=renderMonth; $('#bSearch').oninput=renderBalance;
@@ -403,17 +435,23 @@ function parseCSV(t){const R=[];let r=[],c='',q=false;for(let i=0;i<t.length;i++
 const numify=s=>+((s||'').replace(/[^\d.-]/g,''))||0;
 $('#importBtn').onclick=()=>$('#fileInput').click();
 $('#fileInput').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
-  r.onload=()=>{try{const R=parseCSV(r.result);R.shift();
-    const incoming=R.filter(c=>c[0]||c[1]).map(c=>({date:c[0],name:normName((c[1]||'').trim()),program:(c[2]||'').trim(),note:c[3]||''}));
-    if(visits.length && confirm('기존 방문 '+visits.length+'건이 있어요.\n\n[확인] 이 파일로 전부 교체 (최신 동기화)\n[취소] 기존에 추가'))  visits=[];
-    incoming.forEach(o=>{o._n=uid(visits);visits.push(o);});
-    saveV();render();alert('방문 '+incoming.length+'건 반영 완료');}catch(err){alert('CSV 형식 확인');}$('#fileInput').value='';};r.readAsText(f);};
+  r.onload=async()=>{try{const R=parseCSV(r.result);R.shift();
+    const incoming=R.filter(c=>c[0]||c[1]).map(c=>({date:c[0]||null,name:normName((c[1]||'').trim()),program:(c[2]||'').trim(),note:c[3]||''}));
+    const badDate=incoming.find(o=>o.date && !/^\d{4}-\d{2}-\d{2}$/.test(o.date));
+    if(badDate){alert('일자 형식이 아니에요 ("'+badDate.date+'").\n\n혹시 고객 CSV를 방문용에 넣으셨나요?\n고객은 "고객 탭 → 고객 CSV 가져오기"로 넣어주세요.');$('#fileInput').value='';return;}
+    const replace=visits.length && confirm('기존 방문 '+visits.length+'건이 있어요.\n\n[확인] 이 파일로 전부 교체 (최신 동기화)\n[취소] 기존에 추가');
+    if(replace) await sb.from('visits').delete().neq('id','00000000-0000-0000-0000-000000000000');
+    for(let i=0;i<incoming.length;i+=500){const {error}=await sb.from('visits').insert(incoming.slice(i,i+500));if(error)throw error;}
+    await loadCloud();alert('방문 '+incoming.length+'건 반영 완료');}catch(err){alert('가져오기 실패: '+(err.message||err));}$('#fileInput').value='';};r.readAsText(f);};
 $('#custImportBtn').onclick=()=>$('#custFileInput').click();
 $('#custFileInput').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();
-  r.onload=()=>{try{const R=parseCSV(r.result);R.shift();customers=[];R.forEach((c,i)=>{if(!c[0])return;let ph='',pk='',paid,ss;
+  r.onload=async()=>{try{const R=parseCSV(r.result);R.shift();const map={};R.forEach(c=>{if(!c[0])return;let ph='',pk='',paid,ss;
       if(c.length>=5){ph=(c[1]||'').trim();pk=(c[2]||'').trim();paid=numify(c[3]);ss=numify(c[4]);}else{paid=numify(c[1]);ss=numify(c[2]);}
-      {const nm=normName(c[0].trim());const ex=customers.find(z=>z.name===nm);if(ex){ex.paid=(+ex.paid||0)+paid;ex.sessions=(+ex.sessions||0)+ss;if(!ex.phone&&ph)ex.phone=ph;if(pk)ex.package=pk;}else customers.push({_n:'c'+(i+1),name:nm,phone:ph,package:pk,paid,sessions:ss});}});
-    saveC();render();alert('고객 '+customers.length+'명 가져오기 완료');}catch(err){alert('CSV 형식 확인');}$('#custFileInput').value='';};r.readAsText(f);};
+      const nm=normName(c[0].trim());const ex=map[nm];if(ex){ex.paid+=paid;ex.sessions+=ss;if(!ex.phone&&ph)ex.phone=ph;if(pk)ex.package=pk;}else map[nm]={name:nm,phone:ph,package:pk,paid,sessions:ss};});
+    const rows=Object.values(map);
+    await sb.from('customers').delete().neq('id','00000000-0000-0000-0000-000000000000');
+    for(let i=0;i<rows.length;i+=500){const {error}=await sb.from('customers').insert(rows.slice(i,i+500));if(error)throw error;}
+    await loadCloud();alert('고객 '+rows.length+'명 가져오기 완료');}catch(err){alert('가져오기 실패: '+(err.message||err));}$('#custFileInput').value='';};r.readAsText(f);};
 $('#exportBtn').onclick=()=>{const q=v=>'"'+((v??'')+'').replace(/"/g,'""')+'"';
   const head=['일자','고객명','프로그램','비고','1회실단가','소개업체','미니쉬40','소니드60'];
   const lines=[head.join(',')].concat(visits.map(v=>{const s=split(v.program);return[v.date,v.name,v.program,v.note,s.unit,s.intro,s.minish,s.soneed].map(q).join(',');}));
@@ -493,11 +531,12 @@ $('#custAddBtn').onclick=()=>openCust(null);
 $('#cPkg').onchange=cPkgFill;
 $('#cCloseBtn').onclick=$('#cCancelBtn').onclick=()=>$('#cmodal').classList.remove('open');
 $('#cmodal').onclick=e=>{if(e.target===$('#cmodal'))$('#cmodal').classList.remove('open');};
-$('#cSaveBtn').onclick=()=>{const f={name:normName($('#cName').value.trim()),phone:$('#cPhone').value.trim(),package:$('#cPkg').value,paid:+$('#cPaid').value||0,sessions:+$('#cSess').value||0};
+$('#cSaveBtn').onclick=async()=>{const f={name:normName($('#cName').value.trim()),phone:$('#cPhone').value.trim(),package:$('#cPkg').value,paid:+$('#cPaid').value||0,sessions:+$('#cSess').value||0};
   if(!f.name){alert('고객명을 입력하세요');return;}
-  if(cEditId)Object.assign(customers.find(x=>x._n===cEditId),f);else{f._n='c'+(customers.reduce((m,x)=>Math.max(m,+((x._n||'c0').slice(1))||0),0)+1);customers.push(f);}
-  saveC();$('#cmodal').classList.remove('open');render();};
-$('#cDelBtn').onclick=()=>{if(confirm('이 고객을 삭제할까요?')){customers=customers.filter(x=>x._n!==cEditId);saveC();$('#cmodal').classList.remove('open');render();}};
+  if(cEditId){await sb.from('customers').update(f).eq('id',cEditId);Object.assign(customers.find(x=>x._n===cEditId),f);}
+  else{const {data,error}=await sb.from('customers').insert(f).select().single();if(error){alert('저장 실패: '+error.message);return;}customers.push({...data,_n:data.id});}
+  $('#cmodal').classList.remove('open');render();};
+$('#cDelBtn').onclick=async()=>{if(confirm('이 고객을 삭제할까요?')){await sb.from('customers').delete().eq('id',cEditId);customers=customers.filter(x=>x._n!==cEditId);$('#cmodal').classList.remove('open');render();}};
 document.addEventListener('click',e=>{const id=e.target.dataset?.cedit;if(id)openCust(customers.find(x=>x._n===id));});
 $('#cSearch').oninput=renderCustomers;
 $('#custImportBtn2').onclick=()=>$('#custFileInput').click();
@@ -527,7 +566,19 @@ tick(); setInterval(tick,30000);
 // init
 $('#mProg').innerHTML=PROGRAMS.map(p=>`<option>${p.name}</option>`).join('');
 $('#addBtn').style.display=tab==='month'?'':'none';
-render();
+// ===== AUTH =====
+async function checkAuth(){
+  try{const {data:{session}}=await sb.auth.getSession();
+    if(session){$('#loginGate').style.display='none';await loadCloud();}
+    else{$('#loginGate').style.display='flex';}
+  }catch(e){$('#loginGate').style.display='flex';}
+}
+$('#loginForm').onsubmit=async(e)=>{e.preventDefault();$('#liErr').textContent='로그인 중…';
+  const {error}=await sb.auth.signInWithPassword({email:$('#liEmail').value.trim(),password:$('#liPass').value});
+  if(error){$('#liErr').textContent='로그인 실패 — 이메일/비밀번호를 확인하세요';return;}
+  $('#liErr').textContent='';checkAuth();};
+$('#logoutBtn').onclick=async()=>{await sb.auth.signOut();visits=[];customers=[];render();$('#loginGate').style.display='flex';};
+checkAuth();
 </script>
 </body>
 </html>
