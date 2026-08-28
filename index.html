@@ -416,18 +416,18 @@ function renderMonth(){
     if(/무료/.test(v.program||'')){freeCnt++; freeNames.add(v.name);}
     if(/원장/.test(v.program||'')) wonjang+=s.soneed;});
   const net=N.minish-P.soneed;
-  feeS=Math.round(feeS); feeM=Math.round(feeM); const vat=Math.round(T.soneed/11);
+  feeS=Math.round(feeS); feeM=Math.round(feeM); const vat=Math.round(T.soneed/11); const vatM=Math.round(T.minish/11);
   const pay=payFace*60000+paySmart*70000;
   const soneedNet=T.soneed-pay-wonjang-feeS-vat;
-  const minishNet=T.minish-feeM;
+  const minishNet=T.minish-vatM;
   const mnum=curMonth?+curMonth.slice(5,7):0; const ml=mnum?mnum+'월':''; const nx=mnum?(mnum%12)+1:0;
   $('#m-title').innerHTML=(curMonth?curMonth.replace('-','.'):'')+' 방문 정산'+(freeCnt?` <span style="font-size:.7rem;color:var(--gold);font-weight:600;margin-left:8px;vertical-align:middle">🎁 미니쉬10인무료 ${freeNames.size}명·${freeCnt}건</span>`:'');
   $('#m-metrics').innerHTML=`
     <div class="metric"><div class="k">${ml} 소니드 사용액 <span style="opacity:.7;display:block;font-size:.82em">(카드결제)</span></div><div class="v tnum">${won(N.unit)}</div><div class="s">미니쉬40% ${won(N.minish)} · 소니드60% ${won(N.soneed)} · 소개 ${won(T.intro)} · ${N.cnt}건</div></div>
     <div class="metric"><div class="k">${ml} 패키지 사용액 <span style="opacity:.7;display:block;font-size:.82em">(미니쉬 적립금)</span></div><div class="v tnum">${won(P.unit)}</div><div class="s">미니쉬40% ${won(P.minish)} · 소니드60% ${won(P.soneed)} · ${P.cnt}건</div></div>
-    <div class="metric blue accent"><div class="k">💙 ${ml} 소니드 순수입 <span style="opacity:.7;display:block;font-size:.82em">(급여·수수료·부가세 제외)</span></div><div class="v tnum">${won(soneedNet)}</div><div class="s">귀속 ${won(T.soneed)} − 급여 ${won(pay+wonjang)} <span style="opacity:.6">− 카드수수료 ${won(feeS)} − 부가세 ${won(vat)}</span></div></div>
+    <div class="metric blue accent"><div class="k">💙 ${ml} 소니드 순수입 <span style="opacity:.7;display:block;font-size:.82em">(급여·수수료·부가세 제외)</span></div><div class="v tnum">${won(soneedNet)}</div><div class="s">귀속 ${won(T.soneed)} − 급여 ${won(pay+wonjang)} <span style="opacity:.6">− 카드수수료 ${won(feeS)} − 부가세(10%) ${won(vat)}</span></div></div>
     <div class="metric pay accent"><div class="k">🧾 ${ml} 선생님 급여 <span style="opacity:.7;display:block;font-size:.82em">(관리 1회당)</span></div><div class="v tnum">${won(pay)}</div><div class="s">페이스 ${payFace}건×6만 + 스마트 ${paySmart}건×7만</div></div>
-    <div class="metric recv accent"><div class="k">🧡 ${ml} 미니쉬 수익 <span style="opacity:.7;display:block;font-size:.82em">(카드+패키지 40%)</span></div><div class="v tnum">${won(minishNet)}</div><div class="s">카드40% ${won(N.minish)} + 패키지40% ${won(P.minish)} <span style="opacity:.6">− 카드수수료 ${won(feeM)}</span></div></div>
+    <div class="metric recv accent"><div class="k">🧡 ${ml} 미니쉬 순수입 <span style="opacity:.7;display:block;font-size:.82em">(부가세 제외)</span></div><div class="v tnum">${won(minishNet)}</div><div class="s">사용액 40% ${won(T.minish)} <span style="opacity:.6">− 부가세(10%) ${won(vatM)}</span></div></div>
     <div class="metric net"><div class="k">💸 ${ml} 소니드 → 미니쉬 <span style="opacity:.7;display:block;font-size:.82em">(임차료 지급)</span></div><div class="v tnum">${won(N.minish)}</div><div class="s">카드결제 미니쉬 40% · ${nx}월 10일 이체</div></div>
     <div class="metric recv"><div class="k">💵 ${ml} 미니쉬 → 소니드 <span style="opacity:.7;display:block;font-size:.82em">(패키지 수령액)</span></div><div class="v tnum">${won(P.soneed)}</div><div class="s">패키지 소니드 60% · ${nx}월 10일 이체</div></div>
     <div style="grid-column:1/-1;text-align:center;font-size:.82rem;padding:6px 8px;border-top:1px dashed var(--line);color:var(--muted)">💰 <b>순 차액</b> — ${net>=0?'소니드 → 미니쉬':'미니쉬 → 소니드'} <b style="color:${net>=0?'var(--pay)':'var(--recv)'}">${won(Math.abs(net))}</b> <span style="opacity:.7">(소니드→미니쉬 ${won(N.minish)} − 미니쉬→소니드 ${won(P.soneed)})</span></div>`;
