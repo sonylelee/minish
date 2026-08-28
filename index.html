@@ -349,6 +349,12 @@ function saveV(){ localStorage.setItem(KV,JSON.stringify(visits)); }
 function saveC(){ localStorage.setItem(KC,JSON.stringify(customers)); }
 function uid(a){ return 'x'+(a.reduce((m,x)=>Math.max(m,+x._n||0),0)+1); }
 function split(prog){ const p=PMAP[prog]||{e:0,f:0,g:0,h:0}; return {unit:p.e,intro:p.e-p.f,minish:p.g,soneed:p.h}; }
+// 무료처리(리스트엔 남기되 금액 0): 이름+날짜로 지정. 시트 재동기화에도 유지됨
+const FREE_VISITS=[{n:'박슬비(7289)',d:'2026-05-11'},{n:'고여운(1684)',d:'2026-06-17'}];
+const isFreeV = v => FREE_VISITS.some(x=>x.n===v.name && x.d===v.date);
+const eff = v => isFreeV(v) ? {unit:0,intro:0,minish:0,soneed:0} : split(v.program);
+// 선생님 급여: 페이스리세팅 관리 6만 / 스마트윤곽 7만 (관리 1회당)
+const payOf = p => { p=p||''; if(/원장/.test(p)) return 0; return /스마트윤곽/.test(p) ? 70000 : /페이스리세팅/.test(p) ? 60000 : 0; };
 function monthOf(v){ return (v.date||'').slice(0,7); }
 function fmtD(d){ if(!d)return'–'; const p=d.split('-'); return p.length===3?`${p[1]}.${p[2]}`:d; }
 
@@ -373,20 +379,24 @@ function renderMonth(){
   if(fs)rows=rows.filter(v=>((v.name||'')+(v.program||'')+(v.note||'')).toLowerCase().includes(fs));
   rows.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
   const T={unit:0,intro:0,minish:0,soneed:0}, N={unit:0,minish:0,soneed:0,cnt:0}, P={unit:0,minish:0,soneed:0,cnt:0};
-  rows.forEach(v=>{const s=split(v.program);T.unit+=s.unit;T.intro+=s.intro;T.minish+=s.minish;T.soneed+=s.soneed;
-    if(isPkg(v.program)){P.unit+=s.unit;P.minish+=s.minish;P.soneed+=s.soneed;P.cnt++;}else{N.unit+=s.unit;N.minish+=s.minish;N.soneed+=s.soneed;N.cnt++;}});
+  let payFace=0, paySmart=0;
+  rows.forEach(v=>{const s=eff(v);T.unit+=s.unit;T.intro+=s.intro;T.minish+=s.minish;T.soneed+=s.soneed;
+    if(isPkg(v.program)){P.unit+=s.unit;P.minish+=s.minish;P.soneed+=s.soneed;P.cnt++;}else{N.unit+=s.unit;N.minish+=s.minish;N.soneed+=s.soneed;N.cnt++;}
+    const po=payOf(v.program); if(po===70000)paySmart++; else if(po===60000)payFace++;});
   const net=N.minish-P.soneed;
+  const pay=payFace*60000+paySmart*70000; const soneedNet=T.soneed-pay;
   const mnum=curMonth?+curMonth.slice(5,7):0; const ml=mnum?mnum+'월':''; const nx=mnum?(mnum%12)+1:0;
   $('#m-title').textContent=(curMonth?curMonth.replace('-','.'):'')+' 방문 정산';
   $('#m-metrics').innerHTML=`
-    <div class="metric blue accent"><div class="k">💙 ${ml} 소니드 손익 <span style="opacity:.7">(내가 갖는 돈)</span></div><div class="v tnum">${won(T.soneed)}</div><div class="s">카드결제 60% ${won(N.soneed)} + 패키지 60% ${won(P.soneed)}</div></div>
+    <div class="metric blue accent"><div class="k">💙 ${ml} 소니드 순수입 <span style="opacity:.7">(급여 제외)</span></div><div class="v tnum">${won(soneedNet)}</div><div class="s">소니드 귀속 ${won(T.soneed)} − 급여 ${won(pay)}</div></div>
+    <div class="metric pay accent"><div class="k">🧾 ${ml} 선생님 급여 <span style="opacity:.7">(관리 1회당)</span></div><div class="v tnum">${won(pay)}</div><div class="s">페이스 ${payFace}건×6만 + 스마트 ${paySmart}건×7만</div></div>
     <div class="metric recv accent"><div class="k">🧡 ${ml} 미니쉬 손익 <span style="opacity:.7">(미니쉬가 갖는 돈)</span></div><div class="v tnum">${won(T.minish)}</div><div class="s">카드결제 40% ${won(N.minish)} + 패키지 40% ${won(P.minish)}</div></div>
     <div class="metric net"><div class="k">💸 ${ml} 현금정산 <span style="opacity:.7">(소니드→미니쉬 이체)</span></div><div class="v tnum">${won(net)}</div><div class="s">카드40% 지급 ${won(N.minish)} − 패키지60% 수령 ${won(P.soneed)} · ${nx}월 10일</div></div>
     <div class="metric pay"><div class="k">${ml} ①카드결제 원천 <span style="opacity:.7">(소니드 수금)</span></div><div class="v tnum">${won(N.unit)}</div><div class="s">미니쉬40% ${won(N.minish)} · 소니드60% ${won(N.soneed)} · 소개 ${won(T.intro)} · ${N.cnt}건</div></div>
     <div class="metric pay"><div class="k">${ml} ②패키지 원천 <span style="opacity:.7">(미니쉬 적립금)</span></div><div class="v tnum">${won(P.unit)}</div><div class="s">미니쉬40% ${won(P.minish)} · 소니드60% ${won(P.soneed)} · ${P.cnt}건</div></div>`;
-  $('#m-body').innerHTML=rows.map(v=>{const s=split(v.program);return `<tr>
+  $('#m-body').innerHTML=rows.map(v=>{const s=eff(v);return `<tr>
     <td>${fmtD(v.date)}</td><td><b>${esc(v.name||'–')}</b>${v.note?`<div style="font-size:.7rem;color:var(--muted)">${esc(v.note)}</div>`:''}</td>
-    <td><span class="pill">${esc(v.program||'–')}</span>${isPkg(v.program)?'<span class="tag-pkg">적립금·미니쉬지급</span>':''}</td>
+    <td><span class="pill">${esc(v.program||'–')}</span>${isPkg(v.program)?'<span class="tag-pkg">적립금·미니쉬지급</span>':''}${isFreeV(v)?'<span class="tag-pkg" style="background:var(--gold);color:#1a1a1a">무료처리</span>':''}</td>
     <td class="r tnum">${won(s.unit)}</td><td class="r tnum" style="color:var(--gold)">${won(s.intro)}</td>
     <td class="r tnum" style="color:var(--pay)"><b>${won(s.minish)}</b></td><td class="r tnum" style="color:var(--recv)">${won(s.soneed)}</td>
     <td><button class="rowbtn" data-edit="${v._n}">✎</button></td></tr>`;}).join('');
@@ -398,7 +408,7 @@ function renderMonth(){
 // ---------- BALANCE (선수금) ----------
 function usedByCustomer(){
   const u={};
-  visits.forEach(v=>{ if(isPkg(v.program))return; const s=split(v.program); u[v.name]=(u[v.name]||0)+s.unit; });
+  visits.forEach(v=>{ if(isPkg(v.program))return; const s=eff(v); u[v.name]=(u[v.name]||0)+s.unit; });
   return u;
 }
 function renderBalance(){
@@ -429,7 +439,7 @@ function renderBalance(){
 function renderAnnual(){
   const months=[...new Set(visits.map(monthOf).filter(Boolean))].sort();
   const B={}; months.forEach(m=>B[m]={cnt:0,unit:0,intro:0,pay:0,recv:0,soneed:0,used:0});
-  visits.forEach(v=>{const m=monthOf(v);if(!B[m])return;const s=split(v.program);B[m].cnt++;B[m].unit+=s.unit;B[m].soneed+=s.soneed;
+  visits.forEach(v=>{const m=monthOf(v);if(!B[m])return;const s=eff(v);B[m].cnt++;B[m].unit+=s.unit;B[m].soneed+=s.soneed;
     if(isPkg(v.program))B[m].recv+=s.soneed;else{B[m].intro+=s.intro;B[m].pay+=s.minish;B[m].used+=s.unit;}});
   const rowF=(lbl,b,cls)=>`<tr${cls?` class="${cls}"`:''}><td>${lbl}</td><td class="r tnum">${b.cnt}</td><td class="r tnum">${won(b.unit)}</td><td class="r tnum" style="color:var(--pay)">${won(b.used||0)}</td>
     <td class="r tnum" style="color:var(--gold)">${won(b.intro)}</td><td class="r tnum" style="color:var(--pay)">${won(b.pay)}</td>
@@ -507,11 +517,11 @@ $('#custFileInput').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=
     await loadCloud();alert('고객 '+rows.length+'명 가져오기 완료');}catch(err){alert('가져오기 실패: '+(err.message||err));}$('#custFileInput').value='';};r.readAsText(f);};
 $('#exportBtn').onclick=()=>{const q=v=>'"'+((v??'')+'').replace(/"/g,'""')+'"';
   const head=['일자','고객명','프로그램','비고','1회실단가','소개업체','미니쉬40','소니드60'];
-  const lines=[head.join(',')].concat(visits.map(v=>{const s=split(v.program);return[v.date,v.name,v.program,v.note,s.unit,s.intro,s.minish,s.soneed].map(q).join(',');}));
+  const lines=[head.join(',')].concat(visits.map(v=>{const s=eff(v);return[v.date,v.name,v.program,v.note,s.unit,s.intro,s.minish,s.soneed].map(q).join(',');}));
   dl('소니드미니쉬_방문정산.csv',lines.join('\n'));};
 $('#annualCsvBtn').onclick=()=>{const months=[...new Set(visits.map(monthOf).filter(Boolean))].sort();
   const B={};months.forEach(m=>B[m]={cnt:0,unit:0,intro:0,pay:0,recv:0,soneed:0});
-  visits.forEach(v=>{const m=monthOf(v);if(!B[m])return;const s=split(v.program);B[m].cnt++;B[m].unit+=s.unit;B[m].soneed+=s.soneed;if(isPkg(v.program))B[m].recv+=s.soneed;else{B[m].intro+=s.intro;B[m].pay+=s.minish;}});
+  visits.forEach(v=>{const m=monthOf(v);if(!B[m])return;const s=eff(v);B[m].cnt++;B[m].unit+=s.unit;B[m].soneed+=s.soneed;if(isPkg(v.program))B[m].recv+=s.soneed;else{B[m].intro+=s.intro;B[m].pay+=s.minish;}});
   const q=v=>'"'+v+'"';const head=['기간','방문','1회단가총액','소개업체','미니쉬지급','미니쉬수령','순미니쉬','소니드귀속'];
   const lines=[head.join(',')].concat(months.map(m=>[m,B[m].cnt,B[m].unit,B[m].intro,B[m].pay,B[m].recv,B[m].recv-B[m].pay,B[m].soneed].map(x=>q(x)).join(',')));
   dl('소니드미니쉬_연간요약.csv',lines.join('\n'));};
@@ -525,7 +535,7 @@ $('#excelBtn').onclick=()=>{
   months.forEach(m=>{
     const rows=visits.filter(v=>monthOf(v)===m).sort((a,b)=>(a.date||'').localeCompare(b.date||''));
     const cnt={}; const aoa=[hdr]; const T={pay:0,recv:0,intro:0,soneed:0};
-    rows.forEach(v=>{const p=PMAP[v.program]||{}; const s=split(v.program); cnt[v.name]=(cnt[v.name]||0)+1;
+    rows.forEach(v=>{const p=PMAP[v.program]||{}; const s=eff(v); cnt[v.name]=(cnt[v.name]||0)+1;
       aoa.push([v.date,v.name,cnt[v.name],v.program,Math.round(p.price||0),Math.round(p.e||0),Math.round(p.f||0),Math.round(s.minish),Math.round(s.intro),Math.round(s.soneed),Math.round(s.intro)]);
       if(isPkg(v.program))T.recv+=s.soneed;else{T.pay+=s.minish;T.intro+=s.intro;} T.soneed+=s.soneed;});
     aoa.push([]);
@@ -543,7 +553,7 @@ $('#excelBtn').onclick=()=>{
   names.forEach(nm=>{const c=customers.find(x=>x.name===nm);const paid=c?+c.paid:0;const use=used[nm]||0;bAoa.push([nm,Math.round(paid),visM[nm]||0,Math.round(use),Math.round(paid-use),paid?Math.round(use/paid*100):'']);});
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(bAoa),'선수금 잔액');
   const B={}; months.forEach(m=>B[m]={cnt:0,unit:0,intro:0,pay:0,recv:0,soneed:0});
-  visits.forEach(v=>{const m=monthOf(v);if(!B[m])return;const s=split(v.program);B[m].cnt++;B[m].unit+=s.unit;B[m].soneed+=s.soneed;if(isPkg(v.program))B[m].recv+=s.soneed;else{B[m].intro+=s.intro;B[m].pay+=s.minish;}});
+  visits.forEach(v=>{const m=monthOf(v);if(!B[m])return;const s=eff(v);B[m].cnt++;B[m].unit+=s.unit;B[m].soneed+=s.soneed;if(isPkg(v.program))B[m].recv+=s.soneed;else{B[m].intro+=s.intro;B[m].pay+=s.minish;}});
   const aAoa=[['기간','방문','1회단가총액','소개업체','미니쉬지급','미니쉬수령','순미니쉬','소니드귀속']];
   months.forEach(m=>{const b=B[m];aAoa.push([m,b.cnt,Math.round(b.unit),Math.round(b.intro),Math.round(b.pay),Math.round(b.recv),Math.round(b.pay-b.recv),Math.round(b.soneed)]);});
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(aAoa),'연간 요약');
@@ -551,7 +561,7 @@ $('#excelBtn').onclick=()=>{
 };
 
 // ---------- CUSTOMERS ----------
-function custStats(){const m={};visits.forEach(v=>{const s=split(v.program);const o=m[v.name]||(m[v.name]={cnt:0,last:'',usedAmt:0,usedSess:0});o.cnt++;if((v.date||'')>o.last)o.last=v.date||'';if(!isPkg(v.program)){o.usedAmt+=s.unit;if(s.unit>0)o.usedSess++;}});return m;}
+function custStats(){const m={};visits.forEach(v=>{const s=eff(v);const o=m[v.name]||(m[v.name]={cnt:0,last:'',usedAmt:0,usedSess:0});o.cnt++;if((v.date||'')>o.last)o.last=v.date||'';if(!isPkg(v.program)){o.usedAmt+=s.unit;if(s.unit>0)o.usedSess++;}});return m;}
 function renderCustomers(){
   const st=custStats(); const fs=$('#cSearch').value.trim().toLowerCase();
   const names=[...new Set([...customers.map(c=>c.name),...Object.keys(st)])];
@@ -632,7 +642,7 @@ $('#loginForm').onsubmit=async(e)=>{e.preventDefault();$('#liErr').textContent='
   $('#liErr').textContent='';checkAuth();};
 $('#logoutBtn').onclick=async()=>{await sb.auth.signOut();visits=[];customers=[];render();$('#loginGate').style.display='flex';};
 // ===== 정산명세서 =====
-function stmtAgg(month){let unit=0,intro=0,first=0;visits.filter(v=>monthOf(v)===month&&!isPkg(v.program)).forEach(v=>{const s=split(v.program);unit+=s.unit;intro+=s.intro;if(/첫관리/.test(v.program))first+=s.unit;});return{unit:Math.round(unit),intro:Math.round(intro),first:Math.round(first)};}
+function stmtAgg(month){let unit=0,intro=0,first=0;visits.filter(v=>monthOf(v)===month&&!isPkg(v.program)).forEach(v=>{const s=eff(v);unit+=s.unit;intro+=s.intro;if(/첫관리/.test(v.program))first+=s.unit;});return{unit:Math.round(unit),intro:Math.round(intro),first:Math.round(first)};}
 function openStmt(){
   const m=curMonth; if(!m){alert('월별 정산 탭에서 정산할 월을 먼저 선택하세요');return;}
   const a=stmtAgg(m); const sv=JSON.parse(localStorage.getItem('sd_stmt_'+m)||'{}');
