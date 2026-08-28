@@ -281,8 +281,8 @@ const esc = s => (s+'').replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 const isPkg = p => /미니쉬 패키지/.test(p||'');
 const normName = p => (p||'').replace(/(\D)[0-9]+(\s*\()/,'$1$2').trim();
 
-const SB_URL='https://qvgfnpambbbrgvbowswz.supabase.co';
-const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InF2Z2ZucGFtYmJicmd2Ym93c3d6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU2ODYxMzIsImV4cCI6MjEwMTI2MjEzMn0.QtiQSZjf9mePmu0_3wC_yOyD_DtGD_-PoKPNhwsXLGY';
+const SB_URL='https://asfhmwhktrtbwgmlvrps.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzZmhtd2hrdHJ0YndnbWx2cnBzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODc4MzU1MjEsImV4cCI6MjEwMzQxMTUyMX0.WBE-pzBCvvsh9rTyPttO8YtxbUKSXoY8qQbC-uR1Uvc';
 const sb = supabase.createClient(SB_URL, SB_KEY);
 let visits=[], customers=[];
 async function loadCloud(){
