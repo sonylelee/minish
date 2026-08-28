@@ -515,7 +515,7 @@ function renderCustomers(){
   $('#c-body').innerHTML=list.map(x=>`<tr>
     <td><b>${esc(x.name)}</b></td><td>${esc(x.phone||'–')}</td><td><span class="pill">${PMAP[x.package]?esc(x.package):'예약환불 위약금'}</span></td>
     <td class="r tnum">${won(x.paid)}</td><td class="r tnum">${x.sess||0}</td><td class="r tnum">${x.used}</td>
-    <td class="r tnum"><b style="color:${x.remSess<=0?'var(--pay)':'var(--recv)'}">${x.remSess}회</b></td>
+    <td class="r tnum">${PMAP[x.package]?`<b style="color:${x.remSess<=0?'var(--pay)':'var(--recv)'}">${x.remSess}회</b>`:'<span style="color:var(--muted)">–</span>'}</td>
     <td>${x.last?x.last.slice(5).replace('-','.'):'–'}</td>
     <td class="r tnum" style="color:${x.remAmt<0?'var(--pay)':'var(--ink)'}">${won(x.remAmt)}</td>
     <td>${x._n?`<button class="rowbtn" data-cedit="${x._n}">✎</button>`:''}</td></tr>`).join('');
