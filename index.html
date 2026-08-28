@@ -379,10 +379,11 @@ function renderMonth(){
   const mnum=curMonth?+curMonth.slice(5,7):0; const ml=mnum?mnum+'월':''; const nx=mnum?(mnum%12)+1:0;
   $('#m-title').textContent=(curMonth?curMonth.replace('-','.'):'')+' 방문 정산';
   $('#m-metrics').innerHTML=`
-    <div class="metric pay accent"><div class="k">${ml} 카드결제 (일반매출)</div><div class="v tnum">${won(N.unit)}</div><div class="s">미니쉬 <b style="color:var(--pay)">${won(N.minish)}</b> · 소니드 <b style="color:var(--recv)">${won(N.soneed)}</b> · ${N.cnt}건</div></div>
-    <div class="metric recv accent"><div class="k">${ml} 패키지 (미니쉬 적립금)</div><div class="v tnum">${won(P.unit)}</div><div class="s">미니쉬 <b style="color:var(--pay)">${won(P.minish)}</b> · 소니드 <b style="color:var(--recv)">${won(P.soneed)}</b> · ${P.cnt}건</div></div>
-    <div class="metric blue"><div class="k">${ml} 소니드 귀속 (전체)</div><div class="v tnum">${won(T.soneed)}</div><div class="s">일반+패키지 소니드분 · 방문 ${rows.length}건</div></div>
-    <div class="metric net"><div class="k">${ml} 미니쉬 순정산</div><div class="v tnum">${won(net)}</div><div class="s">지급 − 수령 · ${ml}분 → ${nx}월 10일 정산완료</div></div>`;
+    <div class="metric blue accent"><div class="k">💙 ${ml} 소니드 손익 <span style="opacity:.7">(내가 갖는 돈)</span></div><div class="v tnum">${won(T.soneed)}</div><div class="s">카드결제 60% ${won(N.soneed)} + 패키지 60% ${won(P.soneed)}</div></div>
+    <div class="metric recv accent"><div class="k">🧡 ${ml} 미니쉬 손익 <span style="opacity:.7">(미니쉬가 갖는 돈)</span></div><div class="v tnum">${won(T.minish)}</div><div class="s">카드결제 40% ${won(N.minish)} + 패키지 40% ${won(P.minish)}</div></div>
+    <div class="metric net"><div class="k">💸 ${ml} 현금정산 <span style="opacity:.7">(소니드→미니쉬 이체)</span></div><div class="v tnum">${won(net)}</div><div class="s">카드40% 지급 ${won(N.minish)} − 패키지60% 수령 ${won(P.soneed)} · ${nx}월 10일</div></div>
+    <div class="metric pay"><div class="k">${ml} ①카드결제 원천 <span style="opacity:.7">(소니드 수금)</span></div><div class="v tnum">${won(N.unit)}</div><div class="s">미니쉬40% ${won(N.minish)} · 소니드60% ${won(N.soneed)} · 소개 ${won(T.intro)} · ${N.cnt}건</div></div>
+    <div class="metric pay"><div class="k">${ml} ②패키지 원천 <span style="opacity:.7">(미니쉬 적립금)</span></div><div class="v tnum">${won(P.unit)}</div><div class="s">미니쉬40% ${won(P.minish)} · 소니드60% ${won(P.soneed)} · ${P.cnt}건</div></div>`;
   $('#m-body').innerHTML=rows.map(v=>{const s=split(v.program);return `<tr>
     <td>${fmtD(v.date)}</td><td><b>${esc(v.name||'–')}</b>${v.note?`<div style="font-size:.7rem;color:var(--muted)">${esc(v.note)}</div>`:''}</td>
     <td><span class="pill">${esc(v.program||'–')}</span>${isPkg(v.program)?'<span class="tag-pkg">적립금·미니쉬지급</span>':''}</td>
@@ -550,7 +551,7 @@ $('#excelBtn').onclick=()=>{
 };
 
 // ---------- CUSTOMERS ----------
-function custStats(){const m={};visits.forEach(v=>{const s=split(v.program);const o=m[v.name]||(m[v.name]={cnt:0,last:'',usedAmt:0,usedSess:0});o.cnt++;if((v.date||'')>o.last)o.last=v.date||'';if(!isPkg(v.program)){o.usedAmt+=s.unit;o.usedSess++;}});return m;}
+function custStats(){const m={};visits.forEach(v=>{const s=split(v.program);const o=m[v.name]||(m[v.name]={cnt:0,last:'',usedAmt:0,usedSess:0});o.cnt++;if((v.date||'')>o.last)o.last=v.date||'';if(!isPkg(v.program)){o.usedAmt+=s.unit;if(s.unit>0)o.usedSess++;}});return m;}
 function renderCustomers(){
   const st=custStats(); const fs=$('#cSearch').value.trim().toLowerCase();
   const names=[...new Set([...customers.map(c=>c.name),...Object.keys(st)])];
