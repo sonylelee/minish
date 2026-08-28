@@ -372,17 +372,17 @@ function renderMonth(){
   let rows=visits.filter(v=>monthOf(v)===curMonth);
   if(fs)rows=rows.filter(v=>((v.name||'')+(v.program||'')+(v.note||'')).toLowerCase().includes(fs));
   rows.sort((a,b)=>(a.date||'').localeCompare(b.date||''));
-  const T={unit:0,intro:0,minish:0,soneed:0}, N={minish:0,cnt:0}, P={soneed:0,cnt:0};
+  const T={unit:0,intro:0,minish:0,soneed:0}, N={unit:0,minish:0,soneed:0,cnt:0}, P={unit:0,minish:0,soneed:0,cnt:0};
   rows.forEach(v=>{const s=split(v.program);T.unit+=s.unit;T.intro+=s.intro;T.minish+=s.minish;T.soneed+=s.soneed;
-    if(isPkg(v.program)){P.soneed+=s.soneed;P.cnt++;}else{N.minish+=s.minish;N.cnt++;}});
+    if(isPkg(v.program)){P.unit+=s.unit;P.minish+=s.minish;P.soneed+=s.soneed;P.cnt++;}else{N.unit+=s.unit;N.minish+=s.minish;N.soneed+=s.soneed;N.cnt++;}});
   const net=N.minish-P.soneed;
   const mnum=curMonth?+curMonth.slice(5,7):0; const ml=mnum?mnum+'월':''; const nx=mnum?(mnum%12)+1:0;
   $('#m-title').textContent=(curMonth?curMonth.replace('-','.'):'')+' 방문 정산';
   $('#m-metrics').innerHTML=`
-    <div class="metric pay accent"><div class="k">${ml} 미니쉬 지급 · 일반매출</div><div class="v tnum">${won(N.minish)}</div><div class="s">내 카드결제분 · 미니쉬40% (${N.cnt}건)</div></div>
-    <div class="metric recv accent"><div class="k">${ml} 미니쉬 수령 · 미니쉬패키지</div><div class="v tnum">${won(P.soneed)}</div><div class="s">적립금 차감분 · 소니드60% (${P.cnt}건)</div></div>
-    <div class="metric net"><div class="k">${ml} 미니쉬 순정산</div><div class="v tnum">${won(net)}</div><div class="s">지급 − 수령 · ${ml}분 → ${nx}월 10일 정산완료</div></div>
-    <div class="metric blue"><div class="k">${ml} 소니드 귀속</div><div class="v tnum">${won(T.soneed)}</div><div class="s">60% 합 · 방문 ${rows.length}건</div></div>`;
+    <div class="metric pay accent"><div class="k">${ml} 카드결제 (일반매출)</div><div class="v tnum">${won(N.unit)}</div><div class="s">미니쉬 <b style="color:var(--pay)">${won(N.minish)}</b> · 소니드 <b style="color:var(--recv)">${won(N.soneed)}</b> · ${N.cnt}건</div></div>
+    <div class="metric recv accent"><div class="k">${ml} 패키지 (미니쉬 적립금)</div><div class="v tnum">${won(P.unit)}</div><div class="s">미니쉬 <b style="color:var(--pay)">${won(P.minish)}</b> · 소니드 <b style="color:var(--recv)">${won(P.soneed)}</b> · ${P.cnt}건</div></div>
+    <div class="metric blue"><div class="k">${ml} 소니드 귀속 (전체)</div><div class="v tnum">${won(T.soneed)}</div><div class="s">일반+패키지 소니드분 · 방문 ${rows.length}건</div></div>
+    <div class="metric net"><div class="k">${ml} 미니쉬 순정산</div><div class="v tnum">${won(net)}</div><div class="s">지급 − 수령 · ${ml}분 → ${nx}월 10일 정산완료</div></div>`;
   $('#m-body').innerHTML=rows.map(v=>{const s=split(v.program);return `<tr>
     <td>${fmtD(v.date)}</td><td><b>${esc(v.name||'–')}</b>${v.note?`<div style="font-size:.7rem;color:var(--muted)">${esc(v.note)}</div>`:''}</td>
     <td><span class="pill">${esc(v.program||'–')}</span>${isPkg(v.program)?'<span class="tag-pkg">적립금·미니쉬지급</span>':''}</td>
