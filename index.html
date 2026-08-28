@@ -129,6 +129,21 @@
   .login-box input{width:100%;padding:11px 12px;font-size:.95rem}
   .login-box .btn{width:100%;padding:11px;font-size:.95rem;margin-top:4px}
   .login-err{font-size:.8rem;color:var(--pay);min-height:1.1em}
+  .stmt-paper{padding:22px;color:#111;background:#fff}
+  .stmt-title{text-align:center;font-size:1.05rem;font-weight:800;margin-bottom:14px}
+  .stmt-tbl{width:100%;border-collapse:collapse;margin-bottom:10px;font-size:.82rem}
+  .stmt-tbl th,.stmt-tbl td{border:1px solid #9aa3b0;padding:6px 8px;text-align:left}
+  .stmt-tbl th{background:#eef1f5;font-weight:600}
+  .stmt-tbl td.r{text-align:right;font-variant-numeric:tabular-nums}
+  .stmt-tbl input{width:100%;border:0;text-align:right;font-size:.82rem;background:#e8f0fb;padding:4px 5px;font-family:inherit}
+  .stmt-tbl input:focus{outline:1px solid var(--blue)}
+  @media print{
+    body>*{display:none!important}
+    #stmtModal{display:flex!important;position:static!important;background:#fff!important;padding:0!important;overflow:visible!important}
+    #stmtModal .modal{box-shadow:none!important;border:0!important;max-width:100%!important}
+    #stmtModal .modal-h,#stmtModal .modal-f{display:none!important}
+    .stmt-tbl input{background:#fff!important}
+  }
 </style>
 </head>
 <body>
@@ -149,6 +164,7 @@
     <button class="btn sm onnavy" id="importBtn">데이터 가져오기</button>
     <button class="btn sm onnavy" id="excelBtn">엑셀 저장</button>
     <button class="btn sm onnavy" id="exportBtn">CSV</button>
+    <button class="btn sm onnavy" id="stmtBtn">정산명세서</button>
     <button class="btn sm onnavy primary" id="addBtn">+ 방문 등록</button>
     <button class="btn sm onnavy" id="logoutBtn">로그아웃</button>
   </div>
@@ -266,6 +282,42 @@
     <button class="btn" id="cCancelBtn">취소</button>
     <button class="btn primary" id="cSaveBtn">저장</button>
   </div>
+</div></div>
+<div class="modal-bg" id="stmtModal"><div class="modal" style="max-width:660px">
+  <div class="modal-h"><h3>정산명세서 <span id="stmtMonth"></span></h3><button id="stmtClose">✕</button></div>
+  <div class="modal-b" style="display:block;padding:0">
+    <div id="stmtPaper" class="stmt-paper">
+      <div class="stmt-title"><span id="stmtTitleMonth"></span> 소니드얼굴윤곽 정산명세서</div>
+      <table class="stmt-tbl"><tbody>
+        <tr><th style="width:110px">업체명</th><td>소니드얼굴윤곽</td><th style="width:90px">대표자</th><td></td></tr>
+        <tr><th>사업자번호</th><td></td><th>정산년월</th><td id="stmtYm"></td></tr>
+      </tbody></table>
+      <table class="stmt-tbl"><tbody>
+        <tr><th style="width:70px">구분</th><th style="width:90px">항목</th><th class="r" style="width:130px">금액</th><th>비고</th></tr>
+        <tr><td rowspan="2">수입1</td><td>일회권</td><td class="r"><input type="number" id="s_ilhoe"></td><td>VAT포함, 사용기준</td></tr>
+        <tr><td>정액권</td><td class="r"><input type="number" id="s_jeongaek"></td><td>VAT포함, 사용기준</td></tr>
+        <tr><td rowspan="2">수입2</td><td>패키지</td><td class="r"><input type="number" id="s_pkg"></td><td>VAT포함, 사용기준</td></tr>
+        <tr><td>멤버십</td><td class="r"><input type="number" id="s_mem"></td><td>VAT포함, 사용기준</td></tr>
+        <tr><th colspan="2">수입합계</th><td class="r" id="s_income"></td><td></td></tr>
+      </tbody></table>
+      <table class="stmt-tbl"><tbody>
+        <tr><th style="width:70px">구분</th><th style="width:110px">항목</th><th class="r" style="width:130px">금액</th><th>비고</th></tr>
+        <tr><td>정산1</td><td>수입</td><td class="r" id="s_j1"></td><td>vat포함</td></tr>
+        <tr><td>정산2</td><td>프로모션정산</td><td class="r"><input type="number" id="s_promo"></td><td>소니드 관리시트 합계금액</td></tr>
+        <tr><td>정산3</td><td>정산율</td><td class="r"><input type="number" id="s_rate" style="width:70px;display:inline-block">%</td><td></td></tr>
+        <tr><td>정산4</td><td>그 외 합산</td><td class="r"><input type="number" id="s_add"></td><td></td></tr>
+        <tr><td>정산5</td><td>그 외 차감</td><td class="r"><input type="number" id="s_sub"></td><td><input type="text" id="s_subnote" style="width:100%;text-align:left;background:#e8f0fb;border:0;padding:4px" placeholder="비고(예: 테크단말기 결제분)"></td></tr>
+        <tr><td rowspan="3">임대료정산</td><td>임차료</td><td class="r" id="s_rent"></td><td>((정산1-정산2)*정산3)+정산4-정산5</td></tr>
+        <tr><td>관리비</td><td class="r"><input type="number" id="s_mgmt"></td><td>관리비</td></tr>
+        <tr><th>계</th><td class="r" id="s_total"></td><td></td></tr>
+      </tbody></table>
+      <table class="stmt-tbl"><tbody>
+        <tr><th>[최종] 임대료 정산(vat포함)</th><td class="r" id="s_final" style="width:150px"></td></tr>
+        <tr><th>포인트권 정산수수료(vat포함)</th><td class="r"><input type="number" id="s_point"></td></tr>
+      </tbody></table>
+    </div>
+  </div>
+  <div class="modal-f"><span style="flex:1;font-size:.74rem;color:var(--muted)">파란 칸=직접 입력(미니쉬 POS·조정값) · 나머지 자동계산</span><button class="btn primary" id="stmtPrint">🖨 PDF 저장 / 인쇄</button></div>
 </div></div>
 <input type="file" id="fileInput" accept=".csv" style="display:none">
 <input type="file" id="custFileInput" accept=".csv" style="display:none">
@@ -578,6 +630,40 @@ $('#loginForm').onsubmit=async(e)=>{e.preventDefault();$('#liErr').textContent='
   if(error){$('#liErr').textContent='로그인 실패 — 이메일/비밀번호를 확인하세요';return;}
   $('#liErr').textContent='';checkAuth();};
 $('#logoutBtn').onclick=async()=>{await sb.auth.signOut();visits=[];customers=[];render();$('#loginGate').style.display='flex';};
+// ===== 정산명세서 =====
+function stmtAgg(month){let unit=0,intro=0,first=0;visits.filter(v=>monthOf(v)===month&&!isPkg(v.program)).forEach(v=>{const s=split(v.program);unit+=s.unit;intro+=s.intro;if(/첫관리/.test(v.program))first+=s.unit;});return{unit:Math.round(unit),intro:Math.round(intro),first:Math.round(first)};}
+function openStmt(){
+  const m=curMonth; if(!m){alert('월별 정산 탭에서 정산할 월을 먼저 선택하세요');return;}
+  const a=stmtAgg(m); const sv=JSON.parse(localStorage.getItem('sd_stmt_'+m)||'{}');
+  const S=(id,v)=>{$(id).value=(v==null||v==='')?'':Math.round(v);};
+  S('#s_ilhoe', sv.ilhoe!=null?sv.ilhoe:a.first);
+  S('#s_jeongaek', sv.jeongaek!=null?sv.jeongaek:(a.unit-a.first));
+  S('#s_pkg', sv.pkg!=null?sv.pkg:0);
+  S('#s_mem', sv.mem!=null?sv.mem:0);
+  S('#s_promo', sv.promo!=null?sv.promo:a.intro);
+  $('#s_rate').value=sv.rate!=null?sv.rate:40;
+  S('#s_add', sv.add!=null?sv.add:0);
+  S('#s_sub', sv.sub!=null?sv.sub:0);
+  $('#s_subnote').value=sv.subnote||'';
+  S('#s_mgmt', sv.mgmt!=null?sv.mgmt:0);
+  S('#s_point', sv.point!=null?sv.point:0);
+  $('#stmtMonth').textContent=m.replace('-','.'); $('#stmtTitleMonth').textContent=m.replace('-','.'); $('#stmtYm').textContent=m;
+  recalcStmt(); $('#stmtModal').classList.add('open');
+}
+function recalcStmt(){
+  const n=id=>+$(id).value||0;
+  const income=n('#s_ilhoe')+n('#s_jeongaek')+n('#s_pkg')+n('#s_mem');
+  const j1=income, rent=Math.round((j1-n('#s_promo'))*(n('#s_rate')/100))+n('#s_add')-n('#s_sub'), total=rent+n('#s_mgmt');
+  $('#s_income').textContent=won(income); $('#s_j1').textContent=won(j1);
+  $('#s_rent').textContent=won(rent); $('#s_total').textContent=won(total); $('#s_final').textContent=won(total);
+  localStorage.setItem('sd_stmt_'+curMonth,JSON.stringify({ilhoe:n('#s_ilhoe'),jeongaek:n('#s_jeongaek'),pkg:n('#s_pkg'),mem:n('#s_mem'),promo:n('#s_promo'),rate:n('#s_rate'),add:n('#s_add'),sub:n('#s_sub'),subnote:$('#s_subnote').value,mgmt:n('#s_mgmt'),point:n('#s_point')}));
+}
+$('#stmtBtn').onclick=openStmt;
+$('#stmtClose').onclick=()=>$('#stmtModal').classList.remove('open');
+$('#stmtModal').onclick=e=>{if(e.target===$('#stmtModal'))$('#stmtModal').classList.remove('open');};
+document.querySelectorAll('#stmtPaper input').forEach(el=>el.addEventListener('input',recalcStmt));
+$('#stmtPrint').onclick=()=>window.print();
+
 checkAuth();
 </script>
 </body>
