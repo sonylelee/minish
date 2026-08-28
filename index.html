@@ -554,7 +554,7 @@ function custStats(){const m={};visits.forEach(v=>{const s=split(v.program);cons
 function renderCustomers(){
   const st=custStats(); const fs=$('#cSearch').value.trim().toLowerCase();
   const names=[...new Set([...customers.map(c=>c.name),...Object.keys(st)])];
-  let list=names.map(nm=>{const c=customers.find(x=>x.name===nm)||{};const paid=+c.paid||0;const sess=+c.sessions||Math.round((PMAP[c.package]||{}).sessions||0);const o=st[nm]||{cnt:0,last:'',usedAmt:0,usedSess:0};
+  let list=names.map(nm=>{const c=customers.find(x=>x.name===nm)||{};const paid=+c.paid||0;const sess=(+c.sessions||0)||Math.round((PMAP[c.package]||{}).sessions||0);const o=st[nm]||{cnt:0,last:'',usedAmt:0,usedSess:0};
     return {name:nm,phone:c.phone||'',package:c.package||'',paid,sess,used:o.usedSess,last:o.last,usedAmt:o.usedAmt,remSess:sess-o.usedSess,remAmt:paid-o.usedAmt,_n:c._n};});
   if(fs)list=list.filter(x=>(x.name+x.phone+x.package).toLowerCase().includes(fs));
   list.sort((a,b)=>(b.last||'').localeCompare(a.last||''));
