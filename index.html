@@ -475,10 +475,14 @@ function renderBalance(){
   if(fs)list=list.filter(x=>x.name.toLowerCase().includes(fs));
   list.sort((a,b)=>b.rem-a.rem);
   const TP=list.reduce((s,x)=>s+x.paid,0), TU=list.reduce((s,x)=>s+x.use,0), TR=TP-TU;
+  const stB=custStats();
+  const prepaidPay=list.reduce((s,x)=>{const c=customers.find(cc=>cc.name===x.name)||{};const sess=((+c.sessions||0)||Math.round((PMAP[c.package]||{}).sessions||0))+sessAdj(x.name);const us=(stB[x.name]||{}).usedSess||0;return s+Math.max(0,sess-us)*payOf(c.package||'');},0);
+  const realBal=TR-prepaidPay;
   $('#b-metrics').innerHTML=`
     <div class="metric blue accent"><div class="k">총 수금 (소니드 카드기 매출)</div><div class="v tnum">${won(TP)}</div><div class="s">고객 ${list.filter(x=>x.paid>0).length}명</div></div>
     <div class="metric pay"><div class="k">사용 (소진)</div><div class="v tnum">${won(TU)}</div><div class="s">관리 완료분</div></div>
     <div class="metric recv accent"><div class="k">잔여 (미사용 선수금)</div><div class="v tnum">${won(TR)}</div><div class="s">아직 관리 안 받은 금액</div></div>
+    <div class="metric net accent"><div class="k">실질 잔액 <span style="opacity:.7;font-size:.82em">(선 페이 완불분 제외)</span></div><div class="v tnum">${won(realBal)}</div><div class="s">선수금 ${won(TR)} − 완불페이 ${won(prepaidPay)}</div></div>
     <div class="metric net"><div class="k">전체 사용률</div><div class="v tnum">${TP?Math.round(TU/TP*100):0}%</div><div class="s">소진 / 수금</div></div>`;
   const visM=new Map(); visits.forEach(v=>{visM.set(v.name,(visM.get(v.name)||0)+1);});
   $('#b-body').innerHTML=list.map(x=>{const pct=x.paid?Math.min(100,Math.round(x.use/x.paid*100)):100;return `<tr>
