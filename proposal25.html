@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>정산 수수료율 조정 제안 (미니쉬 25%) · 소니드 × 미니쉬</title>
+<style>
+  :root{
+    --bg:#eef1f6; --surface:#ffffff; --surface2:#f7f9fc; --ink:#182231; --muted:#69748a;
+    --line:#e1e7f0; --soneed:#2660b4; --soneedsoft:#e8f0fb; --minish:#b0872a; --minishsoft:#f6efdd;
+    --gain:#1a7f52; --down:#b23c30; --shadow:0 1px 2px rgba(20,40,70,.06),0 8px 28px rgba(20,40,70,.07);
+  }
+  @media (prefers-color-scheme:dark){
+    :root{ --bg:#0f141c; --surface:#161d28; --surface2:#1b2432; --ink:#e8edf5; --muted:#9aa6ba;
+      --line:#28323f; --soneed:#5a95e6; --soneedsoft:#182838; --minish:#d5a94a; --minishsoft:#2c2313;
+      --gain:#3fb982; --down:#e5695d; --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35); }
+  }
+  :root[data-theme="dark"]{ --bg:#0f141c; --surface:#161d28; --surface2:#1b2432; --ink:#e8edf5; --muted:#9aa6ba;
+    --line:#28323f; --soneed:#5a95e6; --soneedsoft:#182838; --minish:#d5a94a; --minishsoft:#2c2313;
+    --gain:#3fb982; --down:#e5695d; --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35); }
+  :root[data-theme="light"]{ --bg:#eef1f6; --surface:#ffffff; --surface2:#f7f9fc; --ink:#182231; --muted:#69748a;
+    --line:#e1e7f0; --soneed:#2660b4; --soneedsoft:#e8f0fb; --minish:#b0872a; --minishsoft:#f6efdd;
+    --gain:#1a7f52; --down:#b23c30; --shadow:0 1px 2px rgba(20,40,70,.06),0 8px 28px rgba(20,40,70,.07); }
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard","Segoe UI",Roboto,sans-serif;
+    line-height:1.55;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:880px;margin:0 auto;padding:40px 20px 64px}
+  .tnum{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+
+  header{margin-bottom:26px}
+  .eyebrow{font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:10px}
+  h1{font-size:clamp(1.5rem,4vw,2.1rem);line-height:1.2;margin:0 0 10px;font-weight:800;letter-spacing:-.01em;text-wrap:balance}
+  h1 b{color:var(--soneed)}
+  .sub{color:var(--muted);font-size:.95rem;max-width:62ch}
+
+  .cards{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+  @media(max-width:620px){.cards{grid-template-columns:1fr}}
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:22px 22px 20px;box-shadow:var(--shadow);position:relative;overflow:hidden}
+  .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px}
+  .card.s::before{background:var(--soneed)} .card.m::before{background:var(--minish)}
+  .card .who{display:flex;align-items:center;gap:8px;font-weight:700;font-size:1.02rem;margin-bottom:2px}
+  .dot{width:10px;height:10px;border-radius:50%}
+  .card.s .dot{background:var(--soneed)} .card.m .dot{background:var(--minish)}
+  .card .lbl{font-size:.76rem;color:var(--muted);margin-bottom:16px}
+  .flow{display:flex;align-items:flex-end;justify-content:space-between;gap:8px}
+  .flow .col{flex:1}
+  .flow .cap{font-size:.68rem;color:var(--muted);letter-spacing:.04em;margin-bottom:3px}
+  .flow .now{font-size:1.05rem;font-weight:700;color:var(--muted)}
+  .flow .arrow{color:var(--muted);font-size:1.1rem;padding-bottom:3px}
+  .flow .new{font-size:1.5rem;font-weight:800;letter-spacing:-.02em}
+  .card.s .flow .new{color:var(--soneed)} .card.m .flow .new{color:var(--minish)}
+  .delta{margin-top:14px;font-size:.82rem;font-weight:700;display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:8px}
+  .delta.up{color:var(--gain);background:color-mix(in srgb,var(--gain) 12%,transparent)}
+  .delta.dn{color:var(--down);background:color-mix(in srgb,var(--down) 12%,transparent)}
+  .permo{font-size:.7rem;color:var(--muted);font-weight:500;margin-left:4px}
+
+  h2.sec{font-size:.82rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:34px 0 14px;font-weight:700}
+
+  /* benchmark bars */
+  .bench{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px 22px;box-shadow:var(--shadow)}
+  .bar{display:grid;grid-template-columns:130px 1fr 52px;align-items:center;gap:12px;margin:9px 0;font-size:.82rem}
+  @media(max-width:520px){.bar{grid-template-columns:96px 1fr 44px};.bar .bl{font-size:.72rem}}
+  .bar .bl{color:var(--muted);text-align:right;line-height:1.25}
+  .bar .track{background:var(--surface2);border-radius:6px;height:20px;overflow:hidden;border:1px solid var(--line)}
+  .bar .fill{height:100%;border-radius:6px 0 0 6px}
+  .bar .bv{font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+  .bar.hl-now .bl,.bar.hl-now .bv{color:var(--down);font-weight:800}
+  .bar.hl-now .fill{background:var(--down)}
+  .bar.hl-new .bl,.bar.hl-new .bv{color:var(--soneed);font-weight:800}
+  .bar.hl-new .fill{background:var(--soneed)}
+  .bar .fill.plain{background:var(--muted);opacity:.55}
+  .benchnote{font-size:.72rem;color:var(--muted);margin-top:12px;line-height:1.6}
+
+  .why{background:var(--soneedsoft);border:1px solid color-mix(in srgb,var(--soneed) 25%,var(--line));
+    border-radius:14px;padding:18px 20px;margin:22px 0}
+  .why h3{margin:0 0 8px;font-size:.95rem;color:var(--soneed);font-weight:800}
+  .why p{margin:0 0 8px;font-size:.9rem;color:var(--ink)}
+  .why p:last-child{margin:0}
+  .why .em{font-weight:800}
+
+  .tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--surface);box-shadow:var(--shadow)}
+  table{border-collapse:collapse;width:100%;min-width:560px;font-size:.9rem}
+  thead th{background:var(--surface2);text-align:right;padding:12px 14px;font-weight:700;font-size:.76rem;color:var(--muted);border-bottom:1px solid var(--line);white-space:nowrap}
+  thead th.grp{text-align:center}
+  thead th:first-child{text-align:left}
+  .grp.s{color:var(--soneed)} .grp.m{color:var(--minish)}
+  tbody td{padding:11px 14px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap;font-variant-numeric:tabular-nums}
+  tbody td:first-child{text-align:left;font-weight:600;color:var(--muted)}
+  tbody tr:last-child td{border-bottom:none}
+  td.new{font-weight:800}
+  td.snew{color:var(--soneed)} td.mnew{color:var(--minish)}
+  td.old{color:var(--muted)}
+  .divcol{border-left:1px solid var(--line)}
+  tr.total td{background:var(--surface2);font-weight:800;border-top:2px solid var(--line)}
+  tr.total td:first-child{color:var(--ink)}
+
+  .notes{margin-top:24px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 20px}
+  .notes h3{margin:0 0 10px;font-size:.86rem;font-weight:800;color:var(--ink)}
+  .notes ol{margin:0;padding-left:20px}
+  .notes li{font-size:.83rem;color:var(--muted);margin-bottom:7px;line-height:1.55}
+  .notes li b{color:var(--ink)}
+  .foot{margin-top:18px;font-size:.72rem;color:var(--muted);line-height:1.6}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="eyebrow">소니드 얼굴윤곽 압구정점 · 정산 조정 제안</div>
+    <h1>정산 수수료율 조정 제안<br><b>미니쉬 40% → 25%</b></h1>
+    <p class="sub">2026년 4~8월 실제 정산 데이터 기준. 매출·업계 판매수수료율과 비교한 상생 제안입니다.</p>
+  </header>
+  <div class="cards">
+    <div class="card s">
+      <div class="who"><span class="dot"></span>소니드 순수입</div>
+      <div class="lbl">월평균 · 급여·카드수수료·부가세 제외 (운영 순수입)</div>
+      <div class="flow">
+        <div class="col"><div class="cap">현재 40%</div><div class="now tnum">126,459</div></div>
+        <div class="arrow">→</div>
+        <div class="col" style="text-align:right"><div class="cap">제안 25%</div><div class="new tnum">2,747,030</div></div>
+      </div>
+      <div class="delta up">▲ +2,620,571<span class="permo">/월 · 약 22배</span></div>
+    </div>
+    <div class="card m">
+      <div class="who"><span class="dot"></span>미니쉬 순수입</div>
+      <div class="lbl">월평균 · 카드수수료·부가세 제외</div>
+      <div class="flow">
+        <div class="col"><div class="cap">현재 40%</div><div class="now tnum">7,035,285</div></div>
+        <div class="arrow">→</div>
+        <div class="col" style="text-align:right"><div class="cap">제안 25%</div><div class="new tnum">4,397,052</div></div>
+      </div>
+      <div class="delta dn">▼ −2,638,233<span class="permo">/월 · 안정적 유지</span></div>
+    </div>
+  </div>
+
+  <h2 class="sec">업계 판매수수료율 대비 (공정위·중기중앙회 실태조사)</h2>
+  <div class="bench">
+    <div class="bar"><div class="bl">아울렛·복합쇼핑몰<br><span style="font-size:.64rem">공정위 실질</span></div><div class="track"><div class="fill plain" style="width:31.5%"></div></div><div class="bv">12.6%</div></div>
+    <div class="bar"><div class="bl">백화점<br><span style="font-size:.64rem">공정위 실질</span></div><div class="track"><div class="fill plain" style="width:47.8%"></div></div><div class="bv">19.1%</div></div>
+    <div class="bar"><div class="bl">백화점 특약매입<br><span style="font-size:.64rem">중기중앙회 평균</span></div><div class="track"><div class="fill plain" style="width:59.2%"></div></div><div class="bv">23.7%</div></div>
+    <div class="bar hl-new"><div class="bl">★ 제안<br><span style="font-size:.64rem">미니쉬</span></div><div class="track"><div class="fill" style="width:62.5%"></div></div><div class="bv">25%</div></div>
+    <div class="bar"><div class="bl">백화점 화장품<br><span style="font-size:.64rem">카테고리 평균</span></div><div class="track"><div class="fill plain" style="width:69.8%"></div></div><div class="bv">27.9%</div></div>
+    <div class="bar"><div class="bl">롯데백화점<br><span style="font-size:.64rem">최고 응답값</span></div><div class="track"><div class="fill plain" style="width:90.0%"></div></div><div class="bv">36%</div></div>
+    <div class="bar"><div class="bl">신세계백화점<br><span style="font-size:.64rem">최고 응답값</span></div><div class="track"><div class="fill plain" style="width:95.0%"></div></div><div class="bv">38%</div></div>
+    <div class="bar hl-now"><div class="bl">★ 현재<br><span style="font-size:.64rem">미니쉬</span></div><div class="track"><div class="fill" style="width:100.0%"></div></div><div class="bv">40%</div></div>
+    <div class="benchnote">현재 미니쉬 40%는 백화점 실질수수료율(19.1%)의 <b>2배 이상</b>이며, 백화점 최고치인 신세계(38%)·롯데(36%)보다도 높습니다. 제안 <b>25%</b>는 백화점 특약매입 평균(23.7%)~화장품(27.9%) 수준으로, 여전히 업계 상위권의 수수료입니다.</div>
+  </div>
+
+  <h2 class="sec">고객 유입 기여도 — 누가 고객을 데려오나</h2>
+  <div class="bench">
+    <div style="display:flex;height:34px;border-radius:8px;overflow:hidden;border:1px solid var(--line);margin-bottom:14px">
+      <div style="width:95%;background:var(--soneed);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.86rem">소니드 자체 유치 95%</div>
+      <div style="width:5%;background:var(--minish);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:.7rem">5%</div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;text-align:center">
+      <div><div style="font-size:.7rem;color:var(--muted);margin-bottom:2px">매출 기여</div><div style="font-weight:800;font-size:1.05rem;color:var(--soneed)">95%</div><div style="font-size:.68rem;color:var(--muted)">자체 1억1,069만 / 미니쉬 564만</div></div>
+      <div><div style="font-size:.7rem;color:var(--muted);margin-bottom:2px">방문 기여</div><div style="font-weight:800;font-size:1.05rem;color:var(--soneed)">94%</div><div style="font-size:.68rem;color:var(--muted)">자체 786건 / 미니쉬 46건</div></div>
+      <div><div style="font-size:.7rem;color:var(--muted);margin-bottom:2px">신규고객</div><div style="font-weight:800;font-size:1.05rem;color:var(--soneed)">80%</div><div style="font-size:.68rem;color:var(--muted)">자체 110명 / 미니쉬 28명</div></div>
+    </div>
+    <div class="benchnote">소니드 매출의 <b>95%(1억 1,069만원)</b>는 소니드가 네이버·자체 마케팅으로 <b>직접 유치</b>한 고객에서 발생합니다. 미니쉬 유입은 <b>5%(564만원)</b>에 불과합니다.</div>
+  </div>
+
+  <div class="why">
+    <h3>왜 조정이 필요한가</h3>
+    <p>동일한 매출에서 <span class="em">선생님 급여(월 1천만 안팎)와 카드수수료를 소니드가 부담</span>합니다. 전체 소진액의 <span class="em">약 96.6%가 카드결제분</span>(미니쉬패키지 3.4% 제외)입니다.</p>
+    <p>현재 40% 구조에서 소니드 운영 순수입은 <span class="em">월평균 12만원</span>에 불과해, 매출이 적은 달은 적자입니다. 25% 조정 시 소니드는 <span class="em">월평균 2,747,030원</span>을 확보하고, 미니쉬도 <span class="em">월평균 4,397,052원</span>을 안정적으로 유지합니다.</p>
+  </div>
+
+  <h2 class="sec">월별 상세 (2026년, 단위: 원)</h2>
+  <div class="tblwrap">
+    <table>
+      <thead>
+        <tr><th rowspan="2" style="vertical-align:bottom">월</th><th colspan="2" class="grp s">💙 소니드 순수입</th><th colspan="2" class="grp m divcol">🧡 미니쉬 순수입</th></tr>
+        <tr><th>현재 40%</th><th>제안 25%</th><th class="divcol">현재 40%</th><th>제안 25%</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>4월</td><td class="old">603,823</td><td class="new snew">1,891,578</td><td class="old divcol">3,336,366</td><td class="new mnew">2,085,228</td></tr>
+        <tr><td>5월</td><td class="old">695,446</td><td class="new snew">4,973,937</td><td class="old divcol">11,089,949</td><td class="new mnew">6,931,217</td></tr>
+        <tr><td>6월</td><td class="old">−224,906</td><td class="new snew">3,225,000</td><td class="old divcol">9,179,809</td><td class="new mnew">5,737,380</td></tr>
+        <tr><td>7월</td><td class="old">−272,346</td><td class="new snew">2,275,035</td><td class="old divcol">6,961,717</td><td class="new mnew">4,351,072</td></tr>
+        <tr><td>8월</td><td class="old">−169,718</td><td class="new snew">1,369,603</td><td class="old divcol">4,608,586</td><td class="new mnew">2,880,366</td></tr>
+        <tr class="total"><td>5개월 누적</td><td class="old">632,299</td><td class="new snew">13,735,153</td><td class="old divcol">35,176,427</td><td class="new mnew">21,985,263</td></tr>
+        <tr class="total"><td>월평균</td><td class="old">126,459</td><td class="new snew">2,747,030</td><td class="old divcol">7,035,285</td><td class="new mnew">4,397,052</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="notes">
+    <h3>산출 기준 및 특이사항</h3>
+    <ol>
+      <li><b>카드수수료</b>(네이버페이 2.585%·매장 토스 1%)는 카드결제분에 발생 — 전체 소진액의 약 <b>96.6%</b>(미니쉬패키지 적립금 3.4% 제외). 각 순수입은 카드수수료·부가세를 반영한 순액입니다.</li>
+      <li><b>미니쉬 10인 무료</b>는 소니드 부담 페이(관리 1회당)로 반영. 실제로는 원장이 직접 진행해 페이가 나가지 않으나, <b>기회비용</b>으로 계산.</li>
+      <li><b>원장 케어분</b>의 소니드 몫(60%) 전액을 급여로 정산 — <b>원장 케어 없이 운영 시 상황을 파악</b>하기 위한 기준.</li>
+      <li>선생님 급여: 관리 1회당 페이스리세팅 6만원·스마트윤곽 7만원. 월별 편차가 있어 월평균으로 표기.</li>
+    </ol>
+    <p class="foot">출처 · 공정거래위원회 「2025년(2024년 거래 기준) 대규모유통업체 판매수수료율 실태조사」, 중소기업중앙회 「오프라인 대규모유통업체 입점 중소기업 거래 실태조사」(2025).</p>
+  </div>
+</div>
+</body>
+</html>
