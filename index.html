@@ -244,7 +244,7 @@
     <div class="panel">
       <div class="panel-h"><h2>월간 · 분기 · 연간 요약</h2></div>
       <div class="toverflow"><table>
-        <thead><tr><th>기간</th><th class="r">방문</th><th class="r">1회단가 총액</th><th class="r">월 소진액</th><th class="r">소개업체</th><th class="r">미니쉬 지급</th><th class="r">미니쉬 수령</th><th class="r">순 미니쉬</th><th class="r">소니드 귀속</th></tr></thead>
+        <thead><tr><th>기간</th><th class="r">방문</th><th class="r">총 사용액</th><th class="r">카드결제분</th><th class="r">소개업체</th><th class="r">소니드→미니쉬<br><span style="font-weight:400;opacity:.7">임차료</span></th><th class="r">미니쉬→소니드<br><span style="font-weight:400;opacity:.7">패키지</span></th><th class="r">순차액</th><th class="r">소니드 귀속</th></tr></thead>
         <tbody id="a-body"></tbody><tfoot id="a-foot"></tfoot>
       </table></div>
       <div class="empty" id="a-empty">데이터가 없어요.</div>
@@ -515,12 +515,12 @@ function renderAnnual(){
   }});
   $('#a-body').innerHTML=html;
   $('#a-foot').innerHTML=months.length?rowF('전체 합계',G).replace('<tr>','<tr style="font-size:.9rem">'):'';
-  const netG=G.pay-G.recv;
+  const cumSN=months.reduce((s,m)=>s+soneedNetOf(m),0), cumMN=months.reduce((s,m)=>s+minishNetOf(m),0);
   $('#a-metrics').innerHTML=`
-    <div class="metric blue accent"><div class="k">누적 소니드 귀속</div><div class="v tnum">${won(G.soneed)}</div><div class="s">${months.length}개월</div></div>
-    <div class="metric pay"><div class="k">누적 미니쉬 지급액<br>(매월 10일 이전 달 분 업데이트)</div><div class="v tnum">${won(G.pay)}</div><div class="s">일반매출 40%</div></div>
-    <div class="metric recv"><div class="k">누적 미니쉬 수령</div><div class="v tnum">${won(G.recv)}</div><div class="s">미니쉬패키지 60%</div></div>
-    <div class="metric net accent"><div class="k">누적 순 미니쉬 (지급 − 수령)</div><div class="v tnum">${won(netG)}</div><div class="s">매월 10일 정산완료</div></div>`;
+    <div class="metric blue accent"><div class="k">💙 누적 소니드 순수입 <span style="opacity:.7;font-size:.82em">(급여·수수료·부가세 제외)</span></div><div class="v tnum">${won(cumSN)}</div><div class="s">${months.length}개월 운영 순수입</div></div>
+    <div class="metric recv accent"><div class="k">🧡 누적 미니쉬 순수입 <span style="opacity:.7;font-size:.82em">(수수료·부가세 제외)</span></div><div class="v tnum">${won(cumMN)}</div><div class="s">${months.length}개월</div></div>
+    <div class="metric net"><div class="k">💸 누적 소니드 → 미니쉬 <span style="opacity:.7;font-size:.82em">(임차료)</span></div><div class="v tnum">${won(G.pay)}</div><div class="s">카드결제 미니쉬 40% 총 이체</div></div>
+    <div class="metric net"><div class="k">💵 누적 미니쉬 → 소니드 <span style="opacity:.7;font-size:.82em">(패키지)</span></div><div class="v tnum">${won(G.recv)}</div><div class="s">패키지 소니드 60% 총 이체</div></div>`;
   $('#a-empty').style.display=months.length?'none':'block';
 }
 
