@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-<title>소니드 얼굴윤곽 · 박람회</title>
+<title>소니드 얼굴윤곽</title>
 <style>
   :root{ --bg:#0f1115; --panel:#171a20; --ink:#f2efe9; --muted:#9aa0a8; --gold:#c9a86a; --rose:#c06a72; --line:#2a2f38; }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -63,7 +63,7 @@
 </head>
 <body>
 <div class="wrap">
-  <div class="brand"><div class="lg">SO<b>NE</b>ED</div><div class="tg">얼굴윤곽 · 박람회</div></div>
+  <div class="brand"><div class="lg">SO<b>NE</b>ED</div><div class="tg">소니드 얼굴윤곽</div></div>
 
   <!-- 홈 -->
   <section id="home">
@@ -95,16 +95,29 @@
     <div class="cheekpanel" id="cheekpanel" style="display:none;margin-top:12px;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:15px">
       <div id="cheekstatus" style="font-size:.78rem;color:var(--muted);text-align:center;margin-bottom:12px">얼굴을 인식하는 중…</div>
       <div style="margin-bottom:14px">
-        <div style="display:flex;justify-content:space-between;font-size:.78rem;font-weight:700;margin-bottom:6px"><span>광대 내림 ↓</span><span>올림 ↑</span></div>
+        <div style="text-align:center;font-size:.82rem;font-weight:800;margin-bottom:2px">광대 높이</div>
+        <div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-bottom:6px"><span>내림(전방경사) ↓</span><span>↑ 올림(후방경사)</span></div>
         <input type="range" id="sl_raise" min="-100" max="100" value="0" style="width:100%">
       </div>
       <div>
-        <div style="display:flex;justify-content:space-between;font-size:.78rem;font-weight:700;margin-bottom:6px"><span>후방경사 ↙</span><span>전방경사 ↗</span></div>
+        <div style="text-align:center;font-size:.82rem;font-weight:800;margin-bottom:2px">측면 얼굴라인 잡기</div>
+        <div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-bottom:6px"><span>안쪽</span><span>바깥쪽</span></div>
         <input type="range" id="sl_tilt" min="-100" max="100" value="0" style="width:100%">
       </div>
       <button onclick="resetCheek()" style="width:100%;margin-top:12px;background:none;border:1px solid var(--line);color:var(--muted);border-radius:9px;padding:9px;font-size:.82rem;cursor:pointer">원래대로</button>
     </div>
+    <button onclick="capture()" style="width:100%;margin-top:9px;background:var(--rose);border:none;color:#fff;border-radius:11px;padding:14px;font-size:.95rem;font-weight:800;cursor:pointer">📸 사진 저장</button>
     <div class="camnote" id="camnote">카메라를 켜려면 "허용"을 눌러주세요.<br>밝은 곳에서 정면을 봐주세요 :)</div>
+  </section>
+
+  <!-- 캡처 오버레이 -->
+  <section id="capview" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:200;padding:24px 16px;overflow:auto">
+    <div style="max-width:460px;margin:0 auto;text-align:center">
+      <div style="color:#fff;font-weight:800;margin-bottom:6px">📸 저장하기</div>
+      <div style="color:#cfc9c2;font-size:.82rem;margin-bottom:14px">아래 사진을 <b>길게 눌러</b> "이미지 저장"을 선택하세요</div>
+      <img id="capimg" style="width:100%;border-radius:14px;border:1px solid #333">
+      <button onclick="$('capview').classList.add('hidden')" style="width:100%;margin-top:16px;background:#fff;border:none;border-radius:11px;padding:13px;font-weight:800;cursor:pointer">닫기</button>
+    </div>
   </section>
 
   <!-- 설문 -->
@@ -273,19 +286,29 @@ async function loadFaceMesh(){
     faceReady=true; $("cheekstatus").textContent="✅ 슬라이더로 광대 각도를 조절해보세요";
   }catch(e){ faceFail=true; $("cheekstatus").textContent="⚠ 얼굴 인식을 불러오지 못했어요(인터넷 확인). 대칭 거울은 정상 작동해요."; }
 }
-function maskCanvas(d){ const c=document.createElement("canvas"); c.width=c.height=d; const x=c.getContext("2d"); const g=x.createRadialGradient(d/2,d/2,d*0.12,d/2,d/2,d/2); g.addColorStop(0,"rgba(0,0,0,1)"); g.addColorStop(1,"rgba(0,0,0,0)"); x.fillStyle=g; x.fillRect(0,0,d,d); return c; }
-let _mask=null,_md=0;
-function warpPatch(ctx,oc,cx,cy,r,dx,dy){
-  const d=Math.round(r*2); if(d<8) return;
-  if(!_mask||_md!==d){ _mask=maskCanvas(d); _md=d; }
-  tmp.width=d; tmp.height=d;
-  tctx.clearRect(0,0,d,d);
-  // (cx-dx,cy-dy) 위치의 원본이 패치 중앙(=cx,cy)에 오도록 → 광대가 (dx,dy)만큼 이동한 효과
-  tctx.drawImage(oc, r-(cx-dx), r-(cy-dy));
-  tctx.globalCompositeOperation="destination-in";
-  tctx.drawImage(_mask,0,0);
-  tctx.globalCompositeOperation="source-over";
-  ctx.drawImage(tmp, cx-r, cy-r);
+// 진짜 워핑(픽셀 리매핑) — 겹침 없음. 원본(oc)에서 밀어낸 위치를 샘플해 해당 영역만 덮어씀.
+function warpRegion(ctx,cx,cy,r,dx,dy){
+  const R=Math.ceil(r*1.25);
+  const x0=Math.max(0,Math.floor(cx-R)), y0=Math.max(0,Math.floor(cy-R));
+  const w=Math.min(oc.width-x0, R*2), h=Math.min(oc.height-y0, R*2);
+  if(w<4||h<4) return;
+  const src=octx.getImageData(x0,y0,w,h); const sd=src.data;
+  const out=ctx.createImageData(w,h); const od=out.data;
+  const ccx=cx-x0, ccy=cy-y0, sig=r*0.5, twoSig2=2*sig*sig, r2=r*r*1.4;
+  for(let py=0;py<h;py++){
+    for(let px=0;px<w;px++){
+      const oi=(py*w+px)*4;
+      const ddx=px-ccx, ddy=py-ccy, dist2=ddx*ddx+ddy*ddy;
+      let sx=px, sy=py;
+      if(dist2<r2){ const f=Math.exp(-dist2/twoSig2); sx=px-dx*f; sy=py-dy*f; }
+      let ix=sx|0, iy=sy|0;
+      if(ix<0)ix=0; else if(ix>=w)ix=w-1;
+      if(iy<0)iy=0; else if(iy>=h)iy=h-1;
+      const si=(iy*w+ix)*4;
+      od[oi]=sd[si]; od[oi+1]=sd[si+1]; od[oi+2]=sd[si+2]; od[oi+3]=255;
+    }
+  }
+  ctx.putImageData(out,x0,y0);
 }
 function avgPt(lms,idxs,vw,vh){ let sx=0,sy=0; idxs.forEach(i=>{ sx+=(1-lms[i].x); sy+=lms[i].y; }); return {x:sx/idxs.length*vw, y:sy/idxs.length*vh}; }
 function drawCheek(ctx,vw,vh){
@@ -303,15 +326,16 @@ function drawCheek(ctx,vw,vh){
   }
   if(lastCheek){
     const raise=(+$("sl_raise").value||0)/100, tilt=(+$("sl_tilt").value||0)/100;
-    const dy=-raise*lastCheek.r*0.55;      // 올림(+)이면 위로
-    const dxL=-tilt*lastCheek.r*0.45, dxR=tilt*lastCheek.r*0.45; // 전방경사(+): 광대 바깥쪽으로
-    if(Math.abs(raise)>0.02||Math.abs(tilt)>0.02){
-      warpPatch(ctx,oc,lastCheek.L.x,lastCheek.L.y,lastCheek.r,dxL,dy);
-      warpPatch(ctx,oc,lastCheek.R.x,lastCheek.R.y,lastCheek.r,dxR,dy);
+    const dy=-raise*lastCheek.r*0.26;      // 올림(+)이면 위로 (현실적으로 값 축소)
+    const dxL=-tilt*lastCheek.r*0.18, dxR=tilt*lastCheek.r*0.18; // 측면 라인 (값 축소)
+    if(Math.abs(raise)>0.04||Math.abs(tilt)>0.04){
+      warpRegion(ctx,lastCheek.L.x,lastCheek.L.y,lastCheek.r,dxL,dy);
+      warpRegion(ctx,lastCheek.R.x,lastCheek.R.y,lastCheek.r,dxR,dy);
     }
   }
 }
 function resetCheek(){ $("sl_raise").value=0; $("sl_tilt").value=0; }
+function capture(){ if(!camStarted||!cv.width){ toast("먼저 카메라를 켜주세요"); return; } try{ $("capimg").src=cv.toDataURL("image/png"); $("capview").classList.remove("hidden"); }catch(e){ toast("저장 오류"); } }
 </script>
 </body>
 </html>
