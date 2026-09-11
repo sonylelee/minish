@@ -71,8 +71,9 @@
     <h2>당신의 얼굴을<br>마주하는 시간</h2>
     <div class="sub">아래에서 원하시는 항목을 선택해 주세요.</div>
     <div class="menu">
-      <button class="mbtn" onclick="go('mirror')"><span class="emo serif">Ⅰ</span><span><span class="t">얼굴 미러 &amp; 분석</span><span class="d">대칭 · 광대 라인 · 각도 진단</span></span><span class="arr">›</span></button>
-      <button class="mbtn" onclick="go('survey')"><span class="emo serif">Ⅱ</span><span><span class="t">상담 설문</span><span class="d">상담 전 미리 작성해 주세요</span></span><span class="arr">›</span></button>
+      <button class="mbtn" onclick="go('mirror')"><span class="emo serif">Ⅰ</span><span><span class="t">얼굴 미러 &amp; 분석</span><span class="d">대칭 · 광대 라인 시뮬레이션</span></span><span class="arr">›</span></button>
+      <button class="mbtn" onclick="go('scan3d')"><span class="emo serif">Ⅱ</span><span><span class="t">얼굴 3D 분석</span><span class="d">머리를 돌려 스캔 · 3D 회전 관찰 · 각도 진단</span></span><span class="arr">›</span></button>
+      <button class="mbtn" onclick="go('survey')"><span class="emo serif">Ⅲ</span><span><span class="t">상담 설문</span><span class="d">상담 전 미리 작성해 주세요</span></span><span class="arr">›</span></button>
     </div>
     <button onclick="openAdmin()" style="display:block;margin:22px auto 0;background:none;border:none;color:var(--muted);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;cursor:pointer;opacity:.7">관리 (직원)</button>
   </section>
@@ -96,27 +97,6 @@
     </div>
     <button data-m="sym" class="symbtn" onclick="setMode('sym')" style="width:100%;margin-top:9px;background:linear-gradient(180deg,var(--gold2),var(--gold));border:none;color:#1a1510;border-radius:4px;padding:13px;font-size:.85rem;font-weight:600;letter-spacing:.02em;cursor:pointer">✦ 내 얼굴이 대칭이라면?</button>
     <button id="recBtn" onclick="startRecordVideo()" style="width:100%;margin-top:9px;background:var(--panel);border:1px solid var(--gold);color:var(--gold2);border-radius:4px;padding:13px;font-size:.85rem;font-weight:600;letter-spacing:.02em;cursor:pointer">🎬 대칭 영상으로 저장</button>
-    <button data-m="cheek" class="cheekbtn" onclick="setMode('cheek')" style="width:100%;margin-top:9px;background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:4px;padding:13px;font-size:.85rem;font-weight:500;letter-spacing:.02em;cursor:pointer">광대 라인 시뮬레이션</button>
-    <div class="cheekpanel" id="cheekpanel" style="display:none;margin-top:12px;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:15px">
-      <div id="cheekstatus" style="font-size:.78rem;color:var(--muted);text-align:center;margin-bottom:12px">얼굴을 인식하는 중…</div>
-      <div style="margin-bottom:14px">
-        <div style="text-align:center;font-size:.82rem;font-weight:800;margin-bottom:2px">광대 높이</div>
-        <div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-bottom:6px"><span>내림(전방경사) ↓</span><span>↑ 올림(후방경사)</span></div>
-        <input type="range" id="sl_raise" min="-100" max="100" value="0" style="width:100%">
-      </div>
-      <div>
-        <div style="text-align:center;font-size:.82rem;font-weight:800;margin-bottom:2px">측면 얼굴라인 잡기</div>
-        <div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted);margin-bottom:6px"><span>안쪽</span><span>바깥쪽</span></div>
-        <input type="range" id="sl_tilt" min="-100" max="100" value="0" style="width:100%">
-      </div>
-      <button onclick="resetCheek()" style="width:100%;margin-top:12px;background:none;border:1px solid var(--line);color:var(--muted);border-radius:9px;padding:9px;font-size:.82rem;cursor:pointer">원래대로</button>
-    </div>
-    <button data-m="angle" class="anglebtn" onclick="setMode('angle')" style="width:100%;margin-top:9px;background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:4px;padding:13px;font-size:.85rem;font-weight:500;letter-spacing:.02em;cursor:pointer">얼굴 각도 분석</button>
-    <div id="anglepanel" style="display:none;margin-top:12px;background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:15px">
-      <div id="anglestatus" style="font-size:.78rem;color:var(--muted);text-align:center;margin-bottom:10px">얼굴을 인식하는 중…</div>
-      <div id="angleReadout" style="font-size:.86rem;line-height:1.9"></div>
-      <div class="note-inline" style="font-size:.72rem;color:var(--muted);margin-top:8px">※ 정면·수평으로 촬영할수록 정확해요. 참고용 분석이에요.</div>
-    </div>
     <button onclick="capture()" style="width:100%;margin-top:9px;background:linear-gradient(180deg,var(--gold2),var(--gold));border:none;color:#1a1510;border-radius:4px;padding:15px;font-size:.85rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;cursor:pointer">사진 저장</button>
     <div class="camnote" id="camnote">카메라를 켜려면 "허용"을 눌러주세요.<br>밝은 곳에서 정면을 봐주세요 :)</div>
   </section>
@@ -128,6 +108,63 @@
       <div style="color:#cfc9c2;font-size:.82rem;margin-bottom:14px">아래 사진을 <b>길게 눌러</b> "이미지 저장"을 선택하세요</div>
       <img id="capimg" style="width:100%;border-radius:14px;border:1px solid #333">
       <button onclick="$('capview').classList.add('hidden')" style="width:100%;margin-top:16px;background:#fff;border:none;border-radius:11px;padding:13px;font-weight:800;cursor:pointer">닫기</button>
+    </div>
+  </section>
+
+  <!-- 얼굴 3D 분석 -->
+  <section id="scan3d" class="hidden">
+    <button class="back" onclick="go('home')">← 처음으로</button>
+    <h2>얼굴 3D 분석</h2>
+    <div class="sub">미용 윤곽 분석 목적의 얼굴 스캔이에요.<br>머리를 천천히 좌·우·위·아래로 돌려주세요.</div>
+    <div style="margin:10px 0 4px;background:rgba(198,161,90,.10);border:1px solid var(--line);border-radius:6px;padding:10px 12px;font-size:.72rem;line-height:1.6;color:var(--muted);text-align:center">🔒 얼굴 정보는 이 기기 안에서 <b style="color:var(--gold2)">실시간 분석 후 즉시 사라지며</b>,<br>저장·전송하지 않고 <b style="color:var(--gold2)">결제·본인인증 용도로 절대 사용되지 않습니다.</b></div>
+
+    <!-- 스캔 단계 -->
+    <div id="scanPhase">
+      <div style="position:relative;width:100%;aspect-ratio:3/4;background:#000;border-radius:6px;overflow:hidden;border:1px solid var(--line)">
+        <video id="vid3d" playsinline autoplay muted style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video>
+        <canvas id="scanCv" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
+        <div id="scanstatus" style="position:absolute;top:12px;left:0;right:0;text-align:center;font-size:.72rem;font-weight:600;color:#fff;text-shadow:0 1px 8px rgba(0,0,0,.8);letter-spacing:.12em">얼굴 인식 준비 중…</div>
+      </div>
+      <div style="display:flex;justify-content:center;gap:14px;margin-top:12px" id="poseChips"></div>
+      <div class="camnote" id="scannote">밝은 곳에서 정면을 본 뒤, 고개를 천천히 돌려주세요.</div>
+    </div>
+
+    <!-- 결과 단계 (3D) -->
+    <div id="resultPhase" style="display:none">
+      <div style="display:flex;gap:6px;margin-bottom:10px">
+        <button class="v3btn on" data-v="me" onclick="setView3D('me')" style="flex:1;background:var(--gold);border:none;color:#1a1510;border-radius:4px;padding:10px;font-size:.78rem;font-weight:600;cursor:pointer">내 얼굴 3D</button>
+        <button class="v3btn" data-v="L" onclick="setView3D('L')" style="flex:1;background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:4px;padding:10px;font-size:.78rem;font-weight:600;cursor:pointer">왼쪽 완성본</button>
+        <button class="v3btn" data-v="R" onclick="setView3D('R')" style="flex:1;background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:4px;padding:10px;font-size:.78rem;font-weight:600;cursor:pointer">오른쪽 완성본</button>
+      </div>
+      <div style="position:relative;width:100%;aspect-ratio:3/4;background:radial-gradient(ellipse at 50% 40%,#241d16,#141110);border-radius:6px;overflow:hidden;border:1px solid var(--line)">
+        <canvas id="view3d" style="position:absolute;inset:0;width:100%;height:100%;touch-action:none"></canvas>
+        <div id="view3dLabel" style="position:absolute;bottom:10px;left:0;right:0;text-align:center;font-size:.68rem;color:var(--gold2);letter-spacing:.14em;text-transform:uppercase">내 얼굴 3D · 드래그하여 회전</div>
+      </div>
+
+      <!-- 광대 시뮬레이션 슬라이더 -->
+      <div style="margin-top:14px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:15px">
+        <div style="text-align:center;font-size:.8rem;font-weight:700;color:var(--gold2);letter-spacing:.06em;margin-bottom:12px">광대 시뮬레이션</div>
+        <div style="margin-bottom:14px">
+          <div style="text-align:center;font-size:.8rem;font-weight:600;margin-bottom:2px">광대 높이</div>
+          <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);margin-bottom:6px"><span>내림(전방경사) ↓</span><span>↑ 올림(후방경사)</span></div>
+          <input type="range" id="sl_raise" min="-100" max="100" value="0" style="width:100%" oninput="onCheekSlider()">
+        </div>
+        <div>
+          <div style="text-align:center;font-size:.8rem;font-weight:600;margin-bottom:2px">측면 얼굴라인 잡기</div>
+          <div style="display:flex;justify-content:space-between;font-size:.7rem;color:var(--muted);margin-bottom:6px"><span>안쪽</span><span>바깥쪽</span></div>
+          <input type="range" id="sl_tilt" min="-100" max="100" value="0" style="width:100%" oninput="onCheekSlider()">
+        </div>
+        <button onclick="resetCheek3D()" style="width:100%;margin-top:12px;background:none;border:1px solid var(--line);color:var(--muted);border-radius:6px;padding:9px;font-size:.8rem;cursor:pointer">원래대로</button>
+      </div>
+
+      <!-- 각도 분석 -->
+      <div style="margin-top:14px;background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:15px">
+        <div style="text-align:center;font-size:.8rem;font-weight:700;color:var(--gold2);letter-spacing:.06em;margin-bottom:10px">얼굴 각도 분석</div>
+        <div id="angleReadout3d" style="font-size:.86rem;line-height:1.9">측정 중…</div>
+        <div class="note-inline" style="font-size:.72rem;color:var(--muted);margin-top:8px">※ 스캔 시 정면·수평일수록 정확해요. 참고용 분석이에요.</div>
+      </div>
+
+      <button onclick="restart3D()" style="width:100%;margin-top:12px;background:var(--panel);border:1px solid var(--line);color:var(--ink);border-radius:4px;padding:13px;font-size:.85rem;font-weight:600;cursor:pointer">↻ 다시 스캔</button>
     </div>
   </section>
 
@@ -209,11 +246,12 @@ function toast(m){ const t=$("toast"); t.textContent=m; t.style.opacity="1"; cle
 // ---- 화면 전환 ----
 let camStarted=false;
 function go(id){
-  ["home","mirror","survey","done","admin"].forEach(s=>$(s).classList.add("hidden"));
+  ["home","mirror","survey","done","admin","scan3d"].forEach(s=>$(s).classList.add("hidden"));
   $(id).classList.remove("hidden");
   window.scrollTo(0,0);
   if(id==="mirror") startCam();
-  else stopCam();
+  else if(id==="scan3d") start3D();
+  else { stopCam(); stop3D(); }
 }
 // ---- 관리(직원): 설문 조회 ----
 function openAdmin(){
@@ -306,15 +344,8 @@ function stopCam(){ if(raf) cancelAnimationFrame(raf); raf=null; if(stream){ str
 function setMode(m){ mode=m; if(m==="sym") symStart=performance.now();
   if(frozen){ frozen=false; var fb=$("freezeBtn"); if(fb){ fb.textContent="❚❚ 정지하고 보기"; fb.style.background="var(--panel)"; fb.style.color="var(--ink)"; } }
   document.querySelectorAll(".mctrl button").forEach(b=>b.classList.toggle("on",b.dataset.m===m));
-  document.querySelector(".cheekbtn").classList.toggle("on",m==="cheek");
-  document.querySelector(".cheekbtn").style.background=(m==="cheek")?"var(--gold)":"var(--panel)";
-  document.querySelector(".cheekbtn").style.color=(m==="cheek")?"#1a1510":"var(--ink)";
-  $("cheekpanel").style.display=(m==="cheek")?"block":"none";
-  var ab=document.querySelector(".anglebtn");
-  if(ab){ ab.classList.toggle("on",m==="angle"); ab.style.background=(m==="angle")?"var(--gold)":"var(--panel)"; ab.style.color=(m==="angle")?"#1a1510":"var(--ink)"; }
-  $("anglepanel").style.display=(m==="angle")?"block":"none";
-  $("mlabel").textContent={orig:"원본 거울",flip:"좌우 반전",left:"◐ 왼쪽 얼굴 대칭",right:"오른쪽 얼굴 대칭 ◑",cheek:"✨ 광대 각도",angle:"📐 얼굴 각도 분석",sym:"✦ 내 얼굴이 대칭이라면?"}[m];
-  if(m==="cheek"||m==="angle"||m==="sym") loadFaceMesh();
+  $("mlabel").textContent={orig:"원본 거울",flip:"좌우 반전",left:"◐ 왼쪽 얼굴 대칭",right:"오른쪽 얼굴 대칭 ◑",sym:"✦ 내 얼굴이 대칭이라면?"}[m];
+  if(m==="sym") loadFaceMesh();
 }
 const oc=document.createElement("canvas"); const octx=oc.getContext("2d");
 const tmp=document.createElement("canvas"); const tctx=tmp.getContext("2d");
@@ -342,8 +373,6 @@ function loop(){
   else if(mode==="flip"){ ctx.save(); ctx.translate(vw,0); ctx.scale(-1,1); ctx.drawImage(oc,0,0); ctx.restore(); }
   else if(mode==="left"){ ctx.drawImage(oc,0,0,vw/2,vh,0,0,vw/2,vh); ctx.save(); ctx.translate(vw,0); ctx.scale(-1,1); ctx.drawImage(oc,0,0,vw/2,vh,0,0,vw/2,vh); ctx.restore(); }
   else if(mode==="right"){ ctx.drawImage(oc,vw/2,0,vw/2,vh,vw/2,0,vw/2,vh); ctx.save(); ctx.translate(vw,0); ctx.scale(-1,1); ctx.drawImage(oc,vw/2,0,vw/2,vh,vw/2,0,vw/2,vh); ctx.restore(); }
-  else if(mode==="cheek"){ drawCheek(ctx,vw,vh); }
-  else if(mode==="angle"){ drawAngles(ctx,vw,vh); }
   else if(mode==="sym"){ drawSym(ctx,vw,vh); }
 }
 window.addEventListener("pagehide",stopCam);
@@ -512,14 +541,8 @@ function _line(ctx,a,b,col){ ctx.strokeStyle=col; ctx.lineWidth=Math.max(2,ctx.c
 function _hull(pts){ pts=pts.slice().sort(function(a,b){return a.x-b.x||a.y-b.y;}); var n=pts.length,h=[],i; for(i=0;i<n;i++){ while(h.length>=2 && (h[h.length-1].x-h[h.length-2].x)*(pts[i].y-h[h.length-2].y)-(h[h.length-1].y-h[h.length-2].y)*(pts[i].x-h[h.length-2].x)<=0) h.pop(); h.push(pts[i]); } var l=h.length+1; for(i=n-2;i>=0;i--){ while(h.length>=l && (h[h.length-1].x-h[h.length-2].x)*(pts[i].y-h[h.length-2].y)-(h[h.length-1].y-h[h.length-2].y)*(pts[i].x-h[h.length-2].x)<=0) h.pop(); h.push(pts[i]); } h.pop(); return h; }
 function _polyArea(p){ var a=0,n=p.length; for(var i=0;i<n;i++){ var j=(i+1)%n; a+=p[i].x*p[j].y-p[j].x*p[i].y; } return Math.abs(a)/2; }
 function _poly(ctx,p,col){ ctx.strokeStyle=col; ctx.fillStyle=col.replace(/[\d.]+\)$/,'0.12)').replace('rgb(','rgba(').replace('#','#'); ctx.lineWidth=Math.max(1.5,ctx.canvas.width/380); ctx.beginPath(); ctx.moveTo(p[0].x,p[0].y); for(var i=1;i<p.length;i++)ctx.lineTo(p[i].x,p[i].y); ctx.closePath(); ctx.globalAlpha=0.18; ctx.fill(); ctx.globalAlpha=1; ctx.stroke(); }
-function drawAngles(ctx,vw,vh){
-  ctx.drawImage(oc,0,0);
-  if(faceFail){ $("anglestatus").textContent="⚠ 얼굴 인식을 불러오지 못했어요(인터넷 확인)."; return; }
-  if(!faceReady||!faceLM){ $("anglestatus").textContent="얼굴 인식 준비 중… (잠시만요)"; return; }
-  var res=null; try{ res=faceLM.detectForVideo(vid, performance.now()); }catch(e){}
-  if(!res||!res.faceLandmarks||!res.faceLandmarks[0]){ $("anglestatus").textContent="얼굴이 안 보여요. 정면을 봐주세요 :)"; return; }
-  $("anglestatus").textContent="✅ 측정됨 (참고용)";
-  var lm=res.faceLandmarks[0];
+// 랜드마크 → 각도 분석 HTML (오버레이 없이 텍스트만)
+function angleHTML(lm,vw,vh){
   // 눈: 안쪽-바깥쪽 눈꼬리 각도(캔탈 틸트). 화면상 왼/오는 x위치로 구분
   var e1i=_P(lm,133,vw,vh), e1o=_P(lm,33,vw,vh);   // 눈 A (안133-바깥33)
   var e2i=_P(lm,362,vw,vh), e2o=_P(lm,263,vw,vh);  // 눈 B (안362-바깥263)
@@ -554,19 +577,9 @@ function drawAngles(ctx,vw,vh){
   var cheekL=(s1.cx<s2.cx)?s1:s2, cheekR=(s1.cx<s2.cx)?s2:s1;   // 화면상 왼/오
   var tot=cheekL.area+cheekR.area, lPct=tot?cheekL.area/tot*100:50, rPct=100-lPct;
   var cheekDiff=Math.abs(lPct-rPct);
-  // 오버레이
-  _poly(ctx,cheekL.h,"#ff9e9e"); _poly(ctx,cheekR.h,"#9ecbff");
-  _line(ctx,BL.i,BL.o,"#b39ddb"); _line(ctx,BR.i,BR.o,"#b39ddb");
-  _line(ctx,L.i,L.o,"#4fd1ff"); _line(ctx,R.i,R.o,"#4fd1ff");
-  _line(ctx,alL,alR,"#ffd166");
-  _line(ctx,na,sn,"#ff7ab6"); _line(ctx,fh,ch,"rgba(255,255,255,.35)");
-  _line(ctx,subn,lipTop,"#d6a77a");
-  _line(ctx,mL,mR,"#8affc1");
-  // 표시
   function f(v){ return (v>=0?"+":"")+v.toFixed(1)+"°"; }
   function dir(v,pos,neg){ return Math.abs(v)<0.8?"거의 대칭":(v>0?pos:neg); }
-  $("angleReadout").innerHTML=
-    '<div><span style="color:#b39ddb">●</span> <b>눈썹 기울기</b><br><span style="color:var(--muted)">&nbsp;&nbsp;왼쪽 '+f(BL.t)+' · 오른쪽 '+f(BR.t)+'</span></div>'+
+  return '<div><span style="color:#b39ddb">●</span> <b>눈썹 기울기</b><br><span style="color:var(--muted)">&nbsp;&nbsp;왼쪽 '+f(BL.t)+' · 오른쪽 '+f(BR.t)+'</span></div>'+
     '<div><span style="color:#4fd1ff">●</span> <b>눈 각도</b> (눈꼬리 올라간 정도)<br><span style="color:var(--muted)">&nbsp;&nbsp;왼쪽 '+f(L.t)+' · 오른쪽 '+f(R.t)+'</span></div>'+
     '<div><span style="color:#ffd166">●</span> <b>콧볼 하단 기울기</b> '+f(alarTilt)+' <span style="color:var(--muted)">('+dir(alarTilt,"오른쪽↑","왼쪽↑")+')</span></div>'+
     '<div><span style="color:#ff7ab6">●</span> <b>코 쏠림</b> '+f(noseDev)+' <span style="color:var(--muted)">('+dir(noseDev,"오른쪽으로","왼쪽으로")+')</span></div>'+
@@ -576,16 +589,18 @@ function drawAngles(ctx,vw,vh){
 }
 
 // ---- 광대 각도 (얼굴인식 + 국소 워핑) ----
-let faceLM=null, faceReady=false, faceFail=false, lastCheek=null;
+let faceLM=null, faceReady=false, faceFail=false, lastCheek=null, FACE_TESS=null;
+function _meshStat(t){ ["scanstatus","cheekstatus"].forEach(function(id){ var e=$(id); if(e) e.textContent=t; }); }
 async function loadFaceMesh(){
   if(faceLM||faceFail) return;
-  $("cheekstatus").textContent="얼굴 인식 준비 중… (잠시만요)";
+  _meshStat("얼굴 인식 준비 중… (잠시만요)");
   try{
     const vision=await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14");
     const fileset=await vision.FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
     faceLM=await vision.FaceLandmarker.createFromOptions(fileset,{baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/face_landmarker/face_landmarker/float16/1/face_landmarker.task"},runningMode:"VIDEO",numFaces:1});
-    faceReady=true; $("cheekstatus").textContent="✅ 슬라이더로 광대 각도를 조절해보세요";
-  }catch(e){ faceFail=true; $("cheekstatus").textContent="⚠ 얼굴 인식을 불러오지 못했어요(인터넷 확인). 대칭 거울은 정상 작동해요."; }
+    try{ FACE_TESS=vision.FaceLandmarker.FACE_LANDMARKS_TESSELATION; }catch(e){}
+    faceReady=true; _meshStat("✅ 얼굴 인식 준비 완료");
+  }catch(e){ faceFail=true; _meshStat("⚠ 얼굴 인식을 불러오지 못했어요(인터넷 확인)."); }
 }
 // 진짜 워핑(픽셀 리매핑) — 겹침 없음. 원본(oc)에서 밀어낸 위치를 샘플해 해당 영역만 덮어씀.
 function warpRegion(ctx,cx,cy,r,dx,dy){
@@ -637,6 +652,142 @@ function drawCheek(ctx,vw,vh){
 }
 function resetCheek(){ $("sl_raise").value=0; $("sl_tilt").value=0; }
 function capture(){ if(!camStarted||!cv.width){ toast("먼저 카메라를 켜주세요"); return; } try{ $("capimg").src=cv.toDataURL("image/png"); $("capview").classList.remove("hidden"); }catch(e){ toast("저장 오류"); } }
+
+/* ================= 얼굴 3D 분석 ================= */
+var vid3d,scanCv,scan3dRaf=null,render3dRaf=null,scanStream=null;
+var scanPoses,capturedLM=null,capVW=0,capVH=0;
+var MODEL=null,midX3d=0,geom=null,view3d,curView="me";
+var rotY=0.0,rotX=0.0,dragging=false,lastPX=0,lastPY=0;
+var POSE_DEF=[["center","정면"],["left","← 왼쪽"],["right","오른쪽 →"],["up","위 ↑"],["down","아래 ↓"]];
+function renderChips(){ var h=""; POSE_DEF.forEach(function(p){ var ok=scanPoses[p[0]]; h+='<span style="font-size:.72rem;padding:5px 10px;border-radius:20px;border:1px solid '+(ok?'var(--gold)':'var(--line)')+';color:'+(ok?'#1a1510':'var(--muted)')+';background:'+(ok?'var(--gold)':'transparent')+'">'+(ok?'✓ ':'')+p[1]+'</span>'; }); $("poseChips").innerHTML=h; }
+async function start3D(){
+  vid3d=$("vid3d"); scanCv=$("scanCv"); view3d=$("view3d");
+  $("scanPhase").style.display="block"; $("resultPhase").style.display="none";
+  scanPoses={center:false,left:false,right:false,up:false,down:false}; capturedLM=null; MODEL=null; renderChips();
+  loadFaceMesh();
+  try{
+    scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:"user",width:{ideal:720},height:{ideal:960}},audio:false});
+    vid3d.srcObject=scanStream; await vid3d.play();
+    scanLoop();
+  }catch(e){ $("scannote").textContent="카메라를 사용할 수 없어요. 브라우저 권한을 확인해주세요."; }
+}
+function stop3D(){
+  if(scan3dRaf){ cancelAnimationFrame(scan3dRaf); scan3dRaf=null; }
+  if(render3dRaf){ cancelAnimationFrame(render3dRaf); render3dRaf=null; }
+  if(scanStream){ scanStream.getTracks().forEach(function(t){t.stop();}); scanStream=null; }
+}
+function restart3D(){ stop3D(); start3D(); }
+function poseMetrics(lm){
+  var L=lm[234],R=lm[454],N=lm[1],F=lm[10],C=lm[152],EL=lm[33],ER=lm[263];
+  var faceW=(R.x-L.x)||1e-3, cX=(L.x+R.x)/2;
+  var yaw=(N.x-cX)/faceW;
+  var midEyeY=(EL.y+ER.y)/2;
+  var pitch=(N.y-midEyeY)/((C.y-F.y)||1e-3);
+  return {yaw:yaw,pitch:pitch};
+}
+var basePitch=null,bestYaw=9;
+function scanLoop(){
+  scan3dRaf=requestAnimationFrame(scanLoop);
+  if(!vid3d.videoWidth||!faceReady||!faceLM) return;
+  var vw=vid3d.videoWidth,vh=vid3d.videoHeight;
+  if(scanCv.width!==vw){ scanCv.width=vw; scanCv.height=vh; }
+  var ctx=scanCv.getContext("2d"); ctx.clearRect(0,0,vw,vh);
+  var res=null; try{ res=faceLM.detectForVideo(vid3d,performance.now()); }catch(e){}
+  if(!res||!res.faceLandmarks||!res.faceLandmarks[0]){ $("scanstatus").textContent="얼굴이 안 보여요. 정면을 봐주세요 :)"; return; }
+  var lm=res.faceLandmarks[0]; var m=poseMetrics(lm);
+  // 점 오버레이(스캔 느낌) — 셀카 거울좌표
+  ctx.fillStyle="rgba(226,205,148,.85)";
+  for(var i=0;i<lm.length;i+=2){ var px=(1-lm[i].x)*vw, py=lm[i].y*vh; ctx.fillRect(px,py,2,2); }
+  // 정면 감지 → 기준·기하 캡처
+  if(Math.abs(m.yaw)<0.06){
+    if(!scanPoses.center){ scanPoses.center=true; basePitch=m.pitch; renderChips(); }
+    if(Math.abs(m.yaw)<bestYaw){ bestYaw=Math.abs(m.yaw); capturedLM=lm.map(function(p){return {x:p.x,y:p.y,z:p.z};}); capVW=vw; capVH=vh; }
+  }
+  if(m.yaw> 0.13 && !scanPoses.left){ scanPoses.left=true; renderChips(); }
+  if(m.yaw< -0.13 && !scanPoses.right){ scanPoses.right=true; renderChips(); }
+  if(basePitch!=null){
+    if(m.pitch< basePitch-0.05 && !scanPoses.up){ scanPoses.up=true; renderChips(); }
+    if(m.pitch> basePitch+0.05 && !scanPoses.down){ scanPoses.down=true; renderChips(); }
+  }
+  var done=Object.keys(scanPoses).filter(function(k){return scanPoses[k];}).length;
+  $("scanstatus").textContent="스캔 중… "+done+"/5  (고개를 천천히 돌려주세요)";
+  if(done===5 && capturedLM){ showResult3D(); }
+}
+function centroid(lm,key){ var s=0; lm.forEach(function(p){s+=p[key];}); return s/lm.length; }
+function buildModel(lm){
+  var cx=centroid(lm,"x"),cy=centroid(lm,"y"),cz=centroid(lm,"z");
+  var L=lm[234],R=lm[454]; var fw=Math.hypot(R.x-L.x,R.y-L.y)||0.2; var S=1.5/fw;
+  MODEL=lm.map(function(p){ return {x:(p.x-cx)*S, y:(p.y-cy)*S, z:(p.z-cz)*S}; });
+  midX3d=MODEL[1].x;
+}
+var LC=[116,117,118,50,205,101,123,147,187], RC=[345,346,347,280,425,330,352,376,411];
+function applyCheek(model){
+  var raise=(+$("sl_raise").value)/100, tilt=(+$("sl_tilt").value)/100, amp=0.16;
+  var g=model.map(function(p){return {x:p.x,y:p.y,z:p.z};});
+  function mv(idx){ var mean=0; idx.forEach(function(i){mean+=model[i].x;}); mean/=idx.length; var sign=(mean<midX3d)?-1:1;
+    idx.forEach(function(i){ g[i].y+= -raise*amp*0.6; g[i].z+= raise*amp*0.4; g[i].x+= sign*tilt*amp*0.7; }); }
+  mv(LC); mv(RC); return g;
+}
+function symSet(model,keep){
+  var np=[],ne=[],idx={},refl={};
+  var inHalf=function(i){ return keep==="L" ? model[i].x<=midX3d : model[i].x>midX3d; };
+  model.forEach(function(p,i){ if(inHalf(i)){ idx[i]=np.length; np.push({x:p.x,y:p.y,z:p.z}); } });
+  model.forEach(function(p,i){ if(inHalf(i)){ refl[i]=np.length; np.push({x:2*midX3d-p.x,y:p.y,z:p.z}); } });
+  if(FACE_TESS) FACE_TESS.forEach(function(e){ if(inHalf(e.start)&&inHalf(e.end)){ ne.push([idx[e.start],idx[e.end]]); ne.push([refl[e.start],refl[e.end]]); } });
+  return {pts:np,edges:ne};
+}
+function buildGeom(){
+  var dm=applyCheek(MODEL);
+  if(curView==="me"){ var e=[]; if(FACE_TESS) FACE_TESS.forEach(function(c){e.push([c.start,c.end]);}); geom={pts:dm,edges:e}; }
+  else geom=symSet(dm,curView);
+}
+function showResult3D(){
+  if(scan3dRaf){ cancelAnimationFrame(scan3dRaf); scan3dRaf=null; }
+  if(scanStream){ scanStream.getTracks().forEach(function(t){t.stop();}); scanStream=null; }
+  buildModel(capturedLM);
+  try{ $("angleReadout3d").innerHTML=angleHTML(capturedLM,capVW,capVH); }catch(e){ $("angleReadout3d").textContent="분석을 표시할 수 없어요."; }
+  $("scanPhase").style.display="none"; $("resultPhase").style.display="block";
+  curView="me"; rotY=0; rotX=0; setView3D("me");
+  render3D();
+}
+function setView3D(v){
+  curView=v; buildGeom();
+  document.querySelectorAll(".v3btn").forEach(function(b){ var on=b.dataset.v===v; b.classList.toggle("on",on); b.style.background=on?"var(--gold)":"var(--panel)"; b.style.color=on?"#1a1510":"var(--ink)"; b.style.border=on?"none":"1px solid var(--line)"; });
+  $("view3dLabel").textContent=({me:"내 얼굴 3D",L:"왼쪽 대칭 완성본",R:"오른쪽 대칭 완성본"}[v])+" · 드래그하여 회전";
+}
+function onCheekSlider(){ if(MODEL) buildGeom(); }
+function resetCheek3D(){ $("sl_raise").value=0; $("sl_tilt").value=0; if(MODEL) buildGeom(); }
+function _rot(p){
+  var cy=Math.cos(rotY),sy=Math.sin(rotY),cx=Math.cos(rotX),sx=Math.sin(rotX);
+  var x=p.x*cy+p.z*sy, z=-p.x*sy+p.z*cy;
+  var y=p.y*cx - z*sx, z2=p.y*sx + z*cx;
+  return {x:x,y:y,z:z2};
+}
+function render3D(){
+  render3dRaf=requestAnimationFrame(render3D);
+  if(!geom) return;
+  var dpr=Math.min(2,window.devicePixelRatio||1);
+  var cw=view3d.clientWidth||300, chh=view3d.clientHeight||400;
+  if(view3d.width!==Math.round(cw*dpr)){ view3d.width=Math.round(cw*dpr); view3d.height=Math.round(chh*dpr); }
+  var ctx=view3d.getContext("2d"); var W=view3d.width,H=view3d.height;
+  ctx.clearRect(0,0,W,H);
+  if(!dragging) rotY+=0.005;
+  var f=3.0, scale=W*0.42;
+  var rp=geom.pts.map(function(p){ var r=_rot(p); var s=1/(f-r.z); return {X:W/2+r.x*s*scale, Y:H/2+r.y*s*scale, z:r.z, s:s}; });
+  // 엣지(와이어프레임)
+  ctx.lineWidth=Math.max(1,dpr*0.7);
+  geom.edges.forEach(function(e){ var a=rp[e[0]],b=rp[e[1]]; if(!a||!b) return; var d=(a.z+b.z)/2; var al=0.25+0.55*(d+1)/2; ctx.strokeStyle="rgba(226,205,148,"+Math.max(0.05,Math.min(0.8,al)).toFixed(3)+")"; ctx.beginPath(); ctx.moveTo(a.X,a.Y); ctx.lineTo(b.X,b.Y); ctx.stroke(); });
+  // 포인트
+  rp.forEach(function(p){ var al=0.4+0.6*(p.z+1)/2; ctx.fillStyle="rgba(242,222,164,"+Math.max(0.1,Math.min(1,al)).toFixed(3)+")"; var rr=Math.max(1,p.s*dpr*1.1); ctx.beginPath(); ctx.arc(p.X,p.Y,rr,0,7); ctx.fill(); });
+}
+function _bind3D(){
+  var el=$("view3d"); if(!el||el._bound) return; el._bound=true;
+  el.addEventListener("pointerdown",function(e){ dragging=true; lastPX=e.clientX; lastPY=e.clientY; el.setPointerCapture&&el.setPointerCapture(e.pointerId); });
+  el.addEventListener("pointermove",function(e){ if(!dragging) return; rotY+=(e.clientX-lastPX)*0.01; rotX+=(e.clientY-lastPY)*0.01; rotX=Math.max(-1.2,Math.min(1.2,rotX)); lastPX=e.clientX; lastPY=e.clientY; });
+  el.addEventListener("pointerup",function(){ dragging=false; });
+  el.addEventListener("pointercancel",function(){ dragging=false; });
+}
+document.addEventListener("DOMContentLoaded",_bind3D); _bind3D();
 </script>
 </body>
 </html>
