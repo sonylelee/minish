@@ -383,7 +383,7 @@ const eff = v => isFreeV(v) ? {unit:0,intro:0,minish:0,soneed:0} : split(v.progr
 // 관리사 급여: 페이스리세팅 관리 6만 / 스마트윤곽 7만 (관리 1회당)
 const payOf = p => { p=p||''; if(/원장/.test(p)) return 0; if(/스마트윤곽/.test(p)) return 70000; if(/페이스리세팅/.test(p)) return 60000; if(/무료/.test(p)) return 60000; return 0; };
 // 카드수수료: 소개-15%건=네이버페이 2.585% / 그 외=토스 매장카드 1% (카드결제분에만)
-const feeRate = p => /-소개15%/.test(p||'') ? 0.02585 : 0.01;
+const feeRate = p => /소개-?15%/.test(p||'') ? 0.02585 : 0.01;
 function monthOf(v){ return (v.date||'').slice(0,7); }
 function fmtD(d){ if(!d)return'–'; const p=d.split('-'); return p.length===3?`${p[1]}.${p[2]}`:d; }
 
