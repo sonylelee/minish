@@ -5,7 +5,7 @@
 <style>
   :root{--bg:#080709;--panel:#151310;--line:#2c2820;--ink:#f2ede6;--mut:#948d86;--brand:#C81D74;--brandink:#e6a9c6;--ok:#7fd3ae;--gold:#c9a26a}
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  body{margin:0;background:var(--bg);background-image:radial-gradient(150% 100% at 50% -5%,rgba(201,162,106,.20) 0%,rgba(201,162,106,.05) 30%,transparent 62%);background-attachment:fixed;color:var(--ink);font-family:-apple-system,'Apple SD Gothic Neo',sans-serif;letter-spacing:-.01em;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+  body{margin:0;background:var(--bg);background-image:radial-gradient(150% 100% at 50% -5%,rgba(201,162,106,.20) 0%,rgba(201,162,106,.05) 30%,transparent 62%);color:var(--ink);font-family:-apple-system,'Apple SD Gothic Neo',sans-serif;letter-spacing:-.01em;overflow-x:hidden;-webkit-font-smoothing:antialiased;touch-action:pan-y;-webkit-overflow-scrolling:touch;overscroll-behavior-y:auto}
   .wrap{max-width:440px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column}
   .brandbar{display:flex;align-items:baseline;gap:12px;padding:22px 22px 16px;border-bottom:1px solid var(--line);position:relative}
   .brandbar:after{content:'';position:absolute;left:22px;right:22px;bottom:-1px;height:1px;background:linear-gradient(90deg,var(--gold),transparent 60%);opacity:.5}
@@ -279,7 +279,7 @@
     <div id="sideHint" style="position:absolute;left:0;right:0;bottom:12px;text-align:center;font-size:11px;color:#d6d2cb;text-shadow:0 1px 8px rgba(0,0,0,.8)"></div>
   </div>
   <button class="btn primary" id="sideSnapBtn" style="margin-top:10px" onclick="snapSide()">몸을 옆으로 돌려앉아 촬영</button>
-  <canvas id="sideShot" class="propcanv" style="aspect-ratio:3/4;display:none"></canvas>
+  <canvas id="sideShot" class="propcanv" style="aspect-ratio:3/4;height:44vh;width:auto;max-width:100%;margin:10px auto 0;display:none"></canvas>
   <div class="card" id="sideMetrics" style="display:none"></div>
   <div class="card" id="postureCard" style="display:none"></div>
   <div class="row"><button class="btn ghost" style="flex:1" onclick="retakeSide()">다시 촬영</button><button class="btn primary" style="flex:1" id="sideNextBtn" onclick="stopSide();goBody()" disabled>다음 · 상체 분석 →</button></div>
@@ -612,7 +612,8 @@ window.addEventListener('resize',()=>{ if(renderer)resize3D(); });
 
 /* ---- 지표 (눈 각도 등) ---- */
 function renderMetrics(lm){
-  const P=lm.map(q=>({x:q.x,y:q.y}));
+  const _f=(typeof captured!=='undefined'&&captured.front)?captured.front:{}; const _AW=_f.w||1, _AH=_f.h||1;
+  const P=lm.map(q=>({x:q.x*_AW,y:q.y*_AH}));   /* ★사진 실제 픽셀비율로 보정 — 가로사진 각도왜곡 방지 */
   const irisA=P[468],irisB=P[473]; const L=irisA.x<irisB.x?irisA:irisB, R=irisA.x<irisB.x?irisB:irisA;
   let eyeAng=Math.atan2(R.y-L.y,R.x-L.x)*180/Math.PI; // 화면기준
   const own = eyeAng>0?'본인 오른쪽↓':(eyeAng<0?'본인 왼쪽↓':'수평'); // 화면오른쪽아래=본인왼쪽... 표기용
@@ -1253,21 +1254,21 @@ function computeSideAngles(){
   const row=(l,v,n)=>'<div class="metric"><span class="mut">'+l+'</span><b>'+v+(n?' <span class="mut" style="font-weight:400">· '+n+'</span>':'')+'</b></div>';
   const rng='style="width:100%;accent-color:var(--brand)"';
   document.getElementById('sideMetrics').innerHTML=
-    '<details id="sideAngleD" open style="margin-bottom:4px"><summary style="cursor:pointer;font-weight:800;color:var(--brandink);padding:5px 0">📐 옆모습 각도 <span class="mut" style="font-weight:400">· 탭하면 접기</span></summary>'+
+    '<div class="flabel" style="margin-top:2px">코·이마·턱 시뮬 <span class="mut" style="text-transform:none;letter-spacing:0;font-weight:400">(밀어서 실제 변형 · 사진 바로 위에서 확인)</span></div>'+
+    '<div style="display:flex;justify-content:space-between;color:var(--mut);font-size:11px;margin:2px 0 6px"><span>◀ 뒤로 (얼굴 안으로)</span><span style="color:var(--brandink);font-weight:800">0 = 지금 내 얼굴</span><span>앞으로 (돌출) ▶</span></div>'+
+    '<div style="display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--brandink)"><span>코 (앞뒤)</span><b id="swv_nose" style="font-size:11px">'+_swLabel(_sideWarp.nose||0)+'</b></div><input type="range" id="sw_nose" min="-100" max="100" value="'+(_sideWarp.nose||0)+'" oninput="sideWarpAdj(\'nose\',this.value)" '+rng+'>'+
+    '<div style="display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--brandink);margin-top:6px"><span>이마 (앞뒤)</span><b id="swv_brow" style="font-size:11px">'+_swLabel(_sideWarp.brow||0)+'</b></div><input type="range" id="sw_brow" min="-100" max="100" value="'+(_sideWarp.brow||0)+'" oninput="sideWarpAdj(\'brow\',this.value)" '+rng+'>'+
+    '<div style="display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--brandink);margin-top:6px"><span>턱 (앞뒤)</span><b id="swv_chin" style="font-size:11px">'+_swLabel(_sideWarp.chin||0)+'</b></div><input type="range" id="sw_chin" min="-100" max="100" value="'+(_sideWarp.chin||0)+'" oninput="sideWarpAdj(\'chin\',this.value)" '+rng+'>'+
+    '<button class="btn ghost" style="margin-top:10px;width:100%" onclick="resetSidePts()">점 다시 찍기 · 0으로</button>'+
+    '<div class="sub" style="margin-top:8px"><b>0(가운데)</b> = 지금 내 옆모습 그대로예요. 오른쪽(+)으로 밀면 <b>앞으로 나온</b> 모습, 왼쪽(−)으로 밀면 <b>뒤로 들어간</b> 모습이에요. 잘못된 점은 <b>그 위치를 다시 탭</b>하면 수정돼요.</div>'+
+    '<details id="sideAngleD" style="margin-top:14px"><summary style="cursor:pointer;font-weight:800;color:var(--brandink);padding:5px 0">📐 옆모습 각도 수치 <span class="mut" style="font-weight:400">· 탭하면 펼치기</span></summary>'+
     row('콧대각', nasofrontal.toFixed(0)+'°', nasofrontal>140?'콧대 낮은 편':(nasofrontal<125?'콧대 높은 편':'보통'))+
     row('코끝각', tipAng.toFixed(0)+'°', tipAng<95?'코끝 들린/뾰족':(tipAng>120?'코끝 처진/뭉툭':'보통'))+
     row('비순각', nasolabial.toFixed(0)+'°', '한국 여 95~110°·남 90~95°')+
     row('안면 볼록도', convexity.toFixed(0)+'°', '동아시아 162~172°')+
     row('무턱 각도', chinAng.toFixed(0)+'°', eLip>7?'무턱 경향(턱끝 뒤)':(eLip<-4?'턱끝 나온 편':'보통'))+
     row('E-line 대비 윗입술', (eLip>=0?'+':'')+eLip.toFixed(0)+'%', '한국인은 붙거나 살짝 앞이 정상')+
-    '</details>'+
-    '<div class="flabel" style="margin-top:12px">코·이마·턱 시뮬 <span class="mut" style="text-transform:none;letter-spacing:0;font-weight:400">(밀어서 실제 변형)</span></div>'+
-    '<div style="display:flex;justify-content:space-between;color:var(--mut);font-size:11px;margin:2px 0 6px"><span>◀ 뒤로 (얼굴 안으로)</span><span style="color:var(--brandink);font-weight:800">0 = 지금 내 얼굴</span><span>앞으로 (돌출) ▶</span></div>'+
-    '<div style="display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--brandink)"><span>코 (앞뒤)</span><b id="swv_nose" style="font-size:11px">'+_swLabel(_sideWarp.nose||0)+'</b></div><input type="range" id="sw_nose" min="-100" max="100" value="'+(_sideWarp.nose||0)+'" oninput="sideWarpAdj(\'nose\',this.value)" '+rng+'>'+
-    '<div style="display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--brandink);margin-top:6px"><span>이마 (앞뒤)</span><b id="swv_brow" style="font-size:11px">'+_swLabel(_sideWarp.brow||0)+'</b></div><input type="range" id="sw_brow" min="-100" max="100" value="'+(_sideWarp.brow||0)+'" oninput="sideWarpAdj(\'brow\',this.value)" '+rng+'>'+
-    '<div style="display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--brandink);margin-top:6px"><span>턱 (앞뒤)</span><b id="swv_chin" style="font-size:11px">'+_swLabel(_sideWarp.chin||0)+'</b></div><input type="range" id="sw_chin" min="-100" max="100" value="'+(_sideWarp.chin||0)+'" oninput="sideWarpAdj(\'chin\',this.value)" '+rng+'>'+
-    '<button class="btn ghost" style="margin-top:10px;width:100%" onclick="resetSidePts()">점 다시 찍기 · 0으로</button>'+
-    '<div class="sub" style="margin-top:8px"><b>0(가운데)</b> = 지금 내 옆모습 그대로예요. 오른쪽(+)으로 밀면 <b>앞으로 나온</b> 모습, 왼쪽(−)으로 밀면 <b>뒤로 들어간</b> 모습이에요. 잘못된 점은 <b>그 위치를 다시 탭</b>하면 수정돼요.</div>';
+    '</details>';
   document.getElementById('sideMetrics').style.display='block';
   drawSideAnnot();
   if(navigator.vibrate)navigator.vibrate([20,40,20]);
@@ -1426,7 +1427,7 @@ function measureUp(b){
 }
 
 /* ===== 자동 업데이트 감지 (강력 새로고침 유도) ===== */
-const APP_VER='2026-09-16.1';   /* ★배포할 때마다 이 숫자만 올리면, 옛 버전 켠 사람에게 '업데이트' 배너가 뜸 */
+const APP_VER='2026-09-16.2';   /* ★배포할 때마다 이 숫자만 올리면, 옛 버전 켠 사람에게 '업데이트' 배너가 뜸 */
 function _forceUpdate(){
   try{ if('caches' in window) caches.keys().then(ks=>ks.forEach(k=>caches.delete(k))); }catch(e){}
   try{ if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations) navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())); }catch(e){}
