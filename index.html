@@ -299,6 +299,10 @@
       <b>고여운·박슬비</b>님의 경우 추가 서비스 회차가 있어, 발견 날짜인 <b>8월 정산에서 마이너스 처리</b>되었습니다.<br>
       따라서 <b>구글시트·웹의 월단위 정산금액</b>과 <b>실제 이체금액</b>에 차이가 있을 수 있습니다. <b>그 외에는 일치합니다.</b>
     </div>
+    <div style="padding:12px 14px;background:rgba(150,90,220,.10);border-left:3px solid #9a5cdc;border-radius:8px;margin-top:12px">
+      <b>🔀 이영지</b>님 <b>혼합결제 주의</b> (원장 스마트윤곽 33만원) — <b>9/21</b>은 33만원 전액 소니드 카드기 결제이지만, <b>전주 월요일(9/15경)</b>엔 <b>미니쉬 적립금 2만원 + 소니드 카드 31만원</b>으로 나눠 결제하셨습니다.<br>
+      → 적립금 <b>2만원</b>분은 <b>미니쉬 수령(60% 소니드 지급)</b>, 카드 <b>31만원</b>분은 <b>소니드 수금(40% 미니쉬 지급)</b>으로 <b>분리 정산</b> 필요.
+    </div>
   </div>
   <div class="modal-f"><button class="btn" id="noticeNever" style="opacity:.7">다시 보지 않기</button><button class="btn primary" id="noticeOk">확인</button></div>
 </div></div>
@@ -361,7 +365,7 @@ async function loadCloud(){
   customers=(cs||[]).map(r=>({...r,_n:r.id}));
   visits=(vs||[]).map(r=>({...r,_n:r.id}));
   render();
-  if(!window._noticeShown){ window._noticeShown=true; if(localStorage.getItem('sd_notice_v1')!=='1') openNotice(); }
+  if(!window._noticeShown){ window._noticeShown=true; if(localStorage.getItem('sd_notice_v2')!=='1') openNotice(); }
 }
 let tab='customer', curMonth='', editId=null;
 function J(k){ try{return JSON.parse(localStorage.getItem(k))||[];}catch(e){return[];} }
@@ -375,6 +379,7 @@ const EXCEPTIONS=[
   {name:'박슬비(7289)',date:'2026-05-11',month:'2026-05',type:'무료처리',reason:'추가 서비스 1회 (5회권 초과분)'},
   {name:'고여운(1684)',date:'2026-06-17',month:'2026-06',type:'무료처리',reason:'추가 서비스 1회 (5회권 초과분)'},
   {name:'최승미(7158)',date:'2026-07-30',month:'2026-07',type:'횟수조정',delta:-1,reason:'초기 동탄점에서 상담 진행으로 1회 동탄점 진행. 따라서 잔여횟수 차이가 있음'},
+  {name:'이영지(2551)',date:'2026-09-21',month:'2026-09',type:'결제메모',reason:'원장 스마트윤곽 33만원 · 혼합결제 주의 — 9/21은 33만원 전액 소니드 카드기 결제. 전주 월요일(9/15경)엔 미니쉬 적립금 2만원 + 소니드 카드 31만원 혼합 결제 → 적립금 2만원분은 미니쉬 수령(60% 소니드), 카드 31만원분은 소니드 수금(40% 미니쉬 지급)으로 나눠서 정산 반영 필요'},
 ];
 const isFreeV = v => EXCEPTIONS.some(e=>e.type==='무료처리' && e.name===v.name && e.date===v.date);
 const sessAdj = nm => EXCEPTIONS.filter(e=>e.type==='횟수조정'&&e.name===nm).reduce((s,e)=>s+(e.delta||0),0);
@@ -748,7 +753,7 @@ $('#stmtPrint').onclick=()=>window.print();
 
 // ===== 공지 팝업 =====
 function openNotice(){ $('#noticeModal').classList.add('open'); }
-function closeNotice(never){ $('#noticeModal').classList.remove('open'); if(never) localStorage.setItem('sd_notice_v1','1'); }
+function closeNotice(never){ $('#noticeModal').classList.remove('open'); if(never) localStorage.setItem('sd_notice_v2','1'); }
 $('#noticeBtn').onclick=openNotice;
 $('#noticeClose').onclick=$('#noticeOk').onclick=()=>closeNotice(false);
 $('#noticeNever').onclick=()=>closeNotice(true);
