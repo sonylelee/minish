@@ -414,7 +414,28 @@ let landmarker=null, running=false, stream=null;
 const SEG=108;   // 링 눈금 수 (촘촘한 방사형 눈금)
 let filled=[], filledN=0, captured={}, doneSweep=false, phase='front', frontHold=0, frontDoneAt=0, _bestYaw=1, frontT0=0;
 
-function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));document.getElementById(id).classList.add('on');window.scrollTo(0,0);}
+/* 우측 고정 '넘어가기' 플로팅 버튼 — 결과/대칭/거울 화면에서 항상 다음으로 */
+var _SKIP_NEXT={
+  scResult:{label:'얼굴 비율 분석 →', fn:function(){ try{goProp();}catch(e){} }},
+  scSym:{label:'마법의 거울 →', fn:function(){ try{goMirror();}catch(e){} }},
+  scMirror:{label:'주의사항 →', fn:function(){ try{stopMirror();}catch(e){} try{goCare();}catch(e){} }}
+};
+function _ensureSkipBtn(){
+  var b=document.getElementById('skipNext'); if(b) return b;
+  b=document.createElement('button'); b.id='skipNext';
+  b.style.cssText='position:fixed;right:14px;top:50%;transform:translateY(-50%);z-index:9000;'
+    +'background:var(--brand);color:#fff;border:0;border-radius:999px;padding:14px 18px;'
+    +'font-size:14px;font-weight:800;line-height:1.25;cursor:pointer;display:none;'
+    +'box-shadow:0 8px 22px -6px rgba(0,0,0,.55);max-width:112px;text-align:center;writing-mode:horizontal-tb';
+  document.body.appendChild(b);
+  return b;
+}
+function _updateSkipBtn(id){
+  var b=_ensureSkipBtn(); var cfg=_SKIP_NEXT[id];
+  if(cfg){ b.style.display='block'; b.innerHTML='넘어가기<br><span style="font-size:11px;font-weight:600;opacity:.9">'+cfg.label+'</span>'; b.onclick=cfg.fn; }
+  else { b.style.display='none'; b.onclick=null; }
+}
+function go(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('on'));document.getElementById(id).classList.add('on');window.scrollTo(0,0);try{_updateSkipBtn(id);}catch(e){}}
 window.go=go;
 let _an={};   // 분석값 누적 (맞춤 제안용)
 
@@ -1237,7 +1258,7 @@ function drawSideAnnot(){
 function detectSideAuto(ph){ return new Promise(function(res){ const im=new Image(); im.onload=async function(){ try{ await _getFaceImgLm(); const r=_idealLm.detect(im); const q=r&&r.faceLandmarks&&r.faceLandmarks[0]; if(!q){res(null);return;} const iw=im.naturalWidth,ih=im.naturalHeight, idx=[9,168,1,2,0,152]; res(idx.map(i=>({x:q[i].x*iw,y:q[i].y*ih}))); }catch(e){res(null);} }; im.onerror=function(){res(null);}; im.src=ph.img; }); }
 window.resetSidePts=function(){ _sidePts=[]; _sideWarp={nose:0,brow:0,chin:0}; _sideZoom=1; _sideCx=0.5; _sideCy=0.5; drawSideAnnot(); sideTapPrompt(); };
 function _swLabel(v){ v=+v||0; return v===0?'내 얼굴 (기준·0)':(v>0?('앞으로 +'+v):('뒤로 '+v)); }
-window.sideWarpAdj=function(k,v){ _sideWarp[k]=+v; var lbl=document.getElementById('swv_'+k); if(lbl)lbl.textContent=_swLabel(+v); var _d=document.getElementById('sideAngleD'); if(_d&&_d.open)_d.open=false; if(_swRaf)return; _swRaf=requestAnimationFrame(function(){_swRaf=0;drawSideAnnot();}); };
+window.sideWarpAdj=function(k,v){ _sideWarp[k]=+v; var lbl=document.getElementById('swv_'+k); if(lbl)lbl.textContent=_swLabel(+v); if(_swRaf)return; _swRaf=requestAnimationFrame(function(){_swRaf=0;drawSideAnnot();}); };
 function liquifySide(c,W,H,cps){ let x0=W,y0=H,x1=0,y1=0; cps.forEach(cp=>{const R=cp.r*3;x0=Math.min(x0,cp.x-R);y0=Math.min(y0,cp.y-R);x1=Math.max(x1,cp.x+R);y1=Math.max(y1,cp.y+R);}); x0=Math.max(0,x0|0);y0=Math.max(0,y0|0);x1=Math.min(W,x1|0);y1=Math.min(H,y1|0); const bw=x1-x0,bh=y1-y0; if(bw<=0||bh<=0)return; const src=c.getImageData(0,0,W,H),sdata=src.data; const out=c.getImageData(x0,y0,bw,bh),d=out.data; for(let yy=0;yy<bh;yy++){const gy=y0+yy; for(let xx=0;xx<bw;xx++){const gx=x0+xx; let ddx=0,ddy=0; for(let k=0;k<cps.length;k++){const cp=cps[k];const ex=gx-cp.x,ey=gy-cp.y;const w=Math.exp(-(ex*ex+ey*ey)/(2*cp.r*cp.r));ddx+=cp.mx*w;ddy+=cp.my*w;} let sxp=gx-ddx,syp=gy-ddy; if(sxp<0)sxp=0;else if(sxp>W-1)sxp=W-1; if(syp<0)syp=0;else if(syp>H-1)syp=H-1; const si=(((syp|0)*W)+(sxp|0))*4,di=(yy*bw+xx)*4; d[di]=sdata[si];d[di+1]=sdata[si+1];d[di+2]=sdata[si+2];d[di+3]=255;}} c.putImageData(out,x0,y0); }
 function computeSideAngles(){
   const P=_sidePts; if(P.length<6) return;
@@ -1261,14 +1282,14 @@ function computeSideAngles(){
     '<div style="display:flex;justify-content:space-between;align-items:baseline;font-size:12px;color:var(--brandink);margin-top:6px"><span>턱 (앞뒤)</span><b id="swv_chin" style="font-size:11px">'+_swLabel(_sideWarp.chin||0)+'</b></div><input type="range" id="sw_chin" min="-100" max="100" value="'+(_sideWarp.chin||0)+'" oninput="sideWarpAdj(\'chin\',this.value)" '+rng+'>'+
     '<button class="btn ghost" style="margin-top:10px;width:100%" onclick="resetSidePts()">점 다시 찍기 · 0으로</button>'+
     '<div class="sub" style="margin-top:8px"><b>0(가운데)</b> = 지금 내 옆모습 그대로예요. 오른쪽(+)으로 밀면 <b>앞으로 나온</b> 모습, 왼쪽(−)으로 밀면 <b>뒤로 들어간</b> 모습이에요. 잘못된 점은 <b>그 위치를 다시 탭</b>하면 수정돼요.</div>'+
-    '<details id="sideAngleD" style="margin-top:14px"><summary style="cursor:pointer;font-weight:800;color:var(--brandink);padding:5px 0">📐 옆모습 각도 수치 <span class="mut" style="font-weight:400">· 탭하면 펼치기</span></summary>'+
+    '<div id="sideAngleD" style="margin-top:14px"><div style="font-weight:800;color:var(--brandink);padding:5px 0">📐 옆모습 각도 수치</div>'+
     row('콧대각', nasofrontal.toFixed(0)+'°', nasofrontal>140?'콧대 낮은 편':(nasofrontal<125?'콧대 높은 편':'보통'))+
     row('코끝각', tipAng.toFixed(0)+'°', tipAng<95?'코끝 들린/뾰족':(tipAng>120?'코끝 처진/뭉툭':'보통'))+
     row('비순각', nasolabial.toFixed(0)+'°', '한국 여 95~110°·남 90~95°')+
     row('안면 볼록도', convexity.toFixed(0)+'°', '동아시아 162~172°')+
     row('무턱 각도', chinAng.toFixed(0)+'°', eLip>7?'무턱 경향(턱끝 뒤)':(eLip<-4?'턱끝 나온 편':'보통'))+
     row('E-line 대비 윗입술', (eLip>=0?'+':'')+eLip.toFixed(0)+'%', '한국인은 붙거나 살짝 앞이 정상')+
-    '</details>';
+    '</div>';
   document.getElementById('sideMetrics').style.display='block';
   drawSideAnnot();
   if(navigator.vibrate)navigator.vibrate([20,40,20]);
@@ -1427,7 +1448,7 @@ function measureUp(b){
 }
 
 /* ===== 자동 업데이트 감지 (강력 새로고침 유도) ===== */
-const APP_VER='2026-09-16.2';   /* ★배포할 때마다 이 숫자만 올리면, 옛 버전 켠 사람에게 '업데이트' 배너가 뜸 */
+const APP_VER='2026-09-29.1';   /* ★배포할 때마다 이 숫자만 올리면, 옛 버전 켠 사람에게 '업데이트' 배너가 뜸 */
 function _forceUpdate(){
   try{ if('caches' in window) caches.keys().then(ks=>ks.forEach(k=>caches.delete(k))); }catch(e){}
   try{ if(navigator.serviceWorker&&navigator.serviceWorker.getRegistrations) navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())); }catch(e){}
